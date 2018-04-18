@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: 798f78eafd2e8834ca65aa6dbe449671
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - ActorPrefab: {fileID: 154608, guid: 92a75daa6e836a14d83fb065fcf8097e, type: 2}
+  - BulletPrefab: {fileID: 1567486567521022, guid: efc618666a71dcf4ca369a46932e3931,
+      type: 2}
+  - WorldNameText: {instanceID: 0}
+  - WorldXUnitsText: {instanceID: 0}
+  - WorldYUnitsText: {instanceID: 0}
+  - AreaUnitsXText: {instanceID: 0}
+  - AreaUnitsYText: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
