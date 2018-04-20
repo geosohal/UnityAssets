@@ -35,6 +35,7 @@ public class ItemBehaviour : MonoBehaviour
     public SimpleHealthBar healthBar;
     private float shipTilt;
     public float tiltDamper=.62f;
+    private float timeBetweenUpdates;
 
     public void Destroy()
     {
@@ -54,6 +55,7 @@ public class ItemBehaviour : MonoBehaviour
         if (this.item.IsMine)
             GameObject.FindWithTag("MainCamera").GetComponent<CameraController>().playerShip = this.gameObject;
         ShowActor(false);
+        timeBetweenUpdates = .05f;
     }
 
 
@@ -136,7 +138,7 @@ public class ItemBehaviour : MonoBehaviour
        // healthBar.UpdateBar(currHealth, maxHealth);
 
         // move smoothly
-        float lerpT = (Time.time - this.lastMoveUpdateTime) / 0.05f;
+        float lerpT = (Time.time - this.lastMoveUpdateTime) / timeBetweenUpdates;
         bool moveAbsolute = ShowActor(true);
 
         if (moveAbsolute)

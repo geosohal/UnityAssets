@@ -11,14 +11,15 @@ using Photon.MmoDemo.Common;
 
 public class DemoSettings : Photon.MmoDemo.Client.Settings
 {
-    public static float bulletSpeed = 250f; // value is also in servers GlobalVars.cs
+    public static float bulletSpeed = 550f; // value is also in servers GlobalVars.cs
     
     public static DemoSettings GetDefaultSettings()
     {
         DemoSettings result = new DemoSettings();
 
         // photon
-        result.ServerAddress = "73.118.224.14:5055";
+        //result.ServerAddress = "73.118.224.14:5055";
+        result.ServerAddress = "localhost:5055";
         result.UseTcp = false;
         result.ApplicationName = "MmoDemo";
 

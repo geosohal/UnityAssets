@@ -17,6 +17,8 @@ using UnityEngine.UI;
 using System.Linq;
 using sysr = System.Random;
 using System.Collections.Generic;
+using System.Diagnostics;
+using Debug = UnityEngine.Debug;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -59,8 +61,12 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     public Text AreaUnitsYText;
     public float ThrustForce = 5f;
     public float MaxVel = 10f;
+    public float breakDampFactor;
+    public float megaThrustFactor;
+    public float megaMaxVelFactor;
 
     public float maxVelSq;
+    public float MegaThrustFadePerSec; // amount to decrease max thrust per second, value of 1 decreases it by 1 per/sec
     private float lastKeyPress;
     private Vector? lastMovePosition;
     private Vector? lastRotation;
@@ -72,6 +78,14 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     private ItemBehaviour clientsPlayer;    // itembehaviour belonging to the client who runs this code
     private Dictionary<string, ItemBehaviour> actorTable;
     private float lastTime;
+    
+    // speed boost related members
+    private float currMegaThrust = 1f;
+    private float currMaxVel;
+    private float currMaxVelSq;
+    private List<SpecialAbility> abilities;
+    
+    private bool wasTeleported = false;
 
     public Game Game
     {
@@ -100,6 +114,13 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         maxVelSq = MaxVel * MaxVel;
         lastRotStored = new Vector(1,0,0);
         controlsType = ControlsType.DirectionFirst;
+        maxVelSq = MaxVel * MaxVel;
+        currMaxVelSq = maxVelSq;
+        currMaxVel = MaxVel;
+        abilities = new List<SpecialAbility>();
+        SpecialAbility tpability = new SpecialAbility(2f, KeyCode.Mouse0, SpecialAbility.SpecialType.Teleport);
+        abilities.Add(tpability);
+        wasTeleported = false;
     }
 
     public void Start()
@@ -139,19 +160,41 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     {
         float elapsedSec = Time.time - lastTime;
         Game.Update();
-        
-        // send queued movement
-        Move();
 
+        
+        
         if (Game.WorldEntered)
         {
+            // send queued velocity 20 times/sec
+            SendVelocityRot();
+            
+
             ReadKeyboardInput(elapsedSec);
+            foreach (SpecialAbility sa in abilities)
+            {
+                sa.UpdateTimer(elapsedSec);
+                if (sa.IsChargedAndKeyPressed())
+                {
+                    sa.ResetChargeTimer();
+                    switch (sa.specialType)
+                    {
+                        case SpecialAbility.SpecialType.Teleport:
+                            Ray ray = UnityEngine.Camera.main.ScreenPointToRay(Input.mousePosition);
+                            RaycastHit hit;
+                            MoveActorToMousePosition();
+                            wasTeleported = true;
+                            break;
+                    }
+                }
+            }
         }
 
-        if (avatarVelocity.sqrMagnitude > 0)
+        if (avatarVelocity.sqrMagnitude > 0.1f && !wasTeleported)
         {
             MoveRelative(new Vector(avatarVelocity.x, avatarVelocity.y) * elapsedSec);
         }
+
+        
         lastTime = Time.time;
 
     }
@@ -163,7 +206,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
 
     public void OnGUI()
     {
-        if (this.Game != null && this.Game.WorldEntered)
+        if (this.Game != null && this.Game.WorldEntered && Event.current != null)
         {
             if (Event.current.type == EventType.ScrollWheel)
             {
@@ -185,17 +228,17 @@ public class RunBehaviour : MonoBehaviour, IGameListener
                     this.Game.TryGetCamera(0, out cam);
                     cam.ResetViewDistance();
                 }
-                else if (Event.current.button == 0)
-                {
-                    this.MoveActorToMousePosition();
-                }
+//                else if (Event.current.button == 0)
+//                {
+//                    this.MoveActorToMousePosition();
+//                }
             }
             else if (Event.current.type == EventType.MouseDrag)
             {
-                if (Event.current.button == 0)
-                {
-                    this.MoveActorToMousePosition();
-                }
+//                if (Event.current.button == 0)
+//                {
+//                    this.MoveActorToMousePosition();
+//                }
             }
         }
     }
@@ -204,7 +247,8 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     {
         //Operations.SpawnItem(Game, Game.Avatar.Id + "_blt_" + RandomString(5), ItemType.Bullet, new Vector(pos.x, pos.y, pos.z), new Vector(velX,0,velZ), null, true );
         GameObject newbullet = Instantiate(BulletPrefab, new Vector3(bulletItem.Position.X, 0, bulletItem.Position.Z)* WorldToUnityFactor, 
-            Quaternion.LookRotation( new Vector3(bulletItem.Rotation.X, bulletItem.Rotation.Y, bulletItem.Rotation.Z)) );
+            Quaternion.LookRotation( new Vector3(bulletItem.Rotation.X, 0, bulletItem.Rotation.Y)) );
+        Debug.Log("brot:" + bulletItem.Rotation.ToString());
         Bullet bull = newbullet.GetComponent<Bullet>();
         if (bull == null)
             bull = newbullet.AddComponent(typeof(Bullet)) as Bullet;
@@ -449,11 +493,37 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         area.SetViewDistance(viewDistance);
     }
 
+    private void SendVelocityRot()
+    {
+        if (Time.time > this.nextMoveTime)
+        {
+            
+            if (this.avatarVelocity.sqrMagnitude > .1f)
+            {
+                if (this.lastRotation.HasValue)
+                {
+                    Vector lastRot = (Vector) lastRotation;
+                    Game.Avatar.VelocityRotation(new Vector(avatarVelocity.x, avatarVelocity.y),
+                       new Vector(lastRot.X, lastRot.Z));
+                }
+                else
+                {
+                    Debug.Log("null rot");
+                    Game.Avatar.VelocityRotation(new Vector(avatarVelocity.x, avatarVelocity.y), null);
+                }
+            }
 
+            // up to 20 times per second
+            this.nextMoveTime = Time.time + 0.05f;
+        }
+    }
+
+    
     private void Move()
     {
         if (Time.time > this.nextMoveTime)
         {
+            wasTeleported = false;
             if (this.lastMovePosition.HasValue)
             {
                 if (this.lastRotation.HasValue)
@@ -490,6 +560,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
             Vector newPosition = new Vector();
             newPosition.X = hit.point.x/RunBehaviour.WorldToUnityFactor;
             newPosition.Y = hit.point.z/RunBehaviour.WorldToUnityFactor;
+            Debug.Log("new pos" + newPosition.ToString());
             MoveAbsolute(newPosition);
         }
     }
@@ -537,58 +608,91 @@ public class RunBehaviour : MonoBehaviour, IGameListener
             }
         }
 
+        if (Input.GetKey(KeyCode.LeftShift))
+        {
+            currMegaThrust = megaThrustFactor;
+            currMaxVel = MaxVel*megaMaxVelFactor;
+            currMaxVelSq = currMaxVel*currMaxVel;
+        }
+        else
+        {
+            currMegaThrust = 1f;
+            if (currMaxVel > MaxVel)
+            {
+                currMaxVel -= MegaThrustFadePerSec * elapsedSec;
+                currMaxVelSq = currMaxVel * currMaxVel;
+            }
+            else
+            {
+                currMaxVel = MaxVel;
+                currMaxVelSq = maxVelSq;
+            }
+            
+            
+        }
 
         if (controlsType == ControlsType.WasdFirst)
         {
             if (Input.GetKey(KeyCode.W) && Input.GetKey(KeyCode.A))
-                avatarVelocity = avatarVelocity + new Vector2(-1, 1) * ThrustForce;
+                avatarVelocity = avatarVelocity + new Vector2(-1, 1) * ThrustForce * currMegaThrust;
             else if (Input.GetKey(KeyCode.S) && Input.GetKey(KeyCode.A))
-                avatarVelocity = avatarVelocity + new Vector2(-1, -1) * ThrustForce;
+                avatarVelocity = avatarVelocity + new Vector2(-1, -1) * ThrustForce * currMegaThrust;
             else if (Input.GetKey(KeyCode.S) && Input.GetKey(KeyCode.D))
-                avatarVelocity = avatarVelocity + new Vector2(1, -1) * ThrustForce;
+                avatarVelocity = avatarVelocity + new Vector2(1, -1) * ThrustForce * currMegaThrust;
             else if (Input.GetKey(KeyCode.D) && Input.GetKey(KeyCode.W))
-                avatarVelocity = avatarVelocity + new Vector2(1, 1) * ThrustForce;
+                avatarVelocity = avatarVelocity + new Vector2(1, 1) * ThrustForce * currMegaThrust;
             else if (Input.GetKey(KeyCode.Keypad8) || Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow))
-                avatarVelocity = avatarVelocity + Vector2.up * ThrustForce;
+                avatarVelocity = avatarVelocity + Vector2.up * ThrustForce * currMegaThrust;
             else if (Input.GetKey(KeyCode.Keypad4) || Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow))
-                avatarVelocity = avatarVelocity + Vector2.left * ThrustForce;
+                avatarVelocity = avatarVelocity + Vector2.left * ThrustForce * currMegaThrust;
             else if (Input.GetKey(KeyCode.Keypad2) || Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow))
-                avatarVelocity = avatarVelocity + Vector2.down * ThrustForce;
+                avatarVelocity = avatarVelocity + Vector2.down * ThrustForce * currMegaThrust;
             else if (Input.GetKey(KeyCode.Keypad6) || Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow))
-                avatarVelocity = avatarVelocity + Vector2.right * ThrustForce;
+                avatarVelocity = avatarVelocity + Vector2.right * ThrustForce * currMegaThrust;
         }
         else if (controlsType == ControlsType.DirectionFirst)
         {
             if (Input.GetKey(KeyCode.W))
             {
-                avatarVelocity += new Vector2(lastRotStored.X, lastRotStored.Z) * ThrustForce;
+                avatarVelocity += new Vector2(lastRotStored.X, lastRotStored.Z) * ThrustForce * currMegaThrust;
 
                 ParticleSystem[] psystems = clientsPlayer.GetComponentsInChildren<ParticleSystem>();
                 foreach (ParticleSystem ps in psystems)
                 {
                     ps.Emit(1);
-                    ps.transform.rotation = Quaternion.AngleAxis(180, Vector3.up);
+                    ps.transform.rotation = clientsPlayer.transform.rotation * Quaternion.AngleAxis(180, Vector3.up);
                 }
 
             }
             else if (Input.GetKey(KeyCode.S))
             {
-                avatarVelocity -= new Vector2(lastRotStored.X, lastRotStored.Z) * ThrustForce;
+                avatarVelocity -= new Vector2(lastRotStored.X, lastRotStored.Z) * ThrustForce * currMegaThrust;
                 
                 ParticleSystem[] psystems = clientsPlayer.GetComponentsInChildren<ParticleSystem>();
                 foreach (ParticleSystem ps in psystems)
                 {
                     ps.Emit(1);
-                    ps.transform.rotation = Quaternion.identity;
+                    ps.transform.rotation = clientsPlayer.transform.rotation;
                 }
             }
 
         }
-
-
-        if (avatarVelocity.sqrMagnitude > maxVelSq)
+        
+        if (Input.GetKey((KeyCode.E)))
         {
-            avatarVelocity = avatarVelocity.normalized * MaxVel;
+            avatarVelocity *= breakDampFactor;
+        }
+        // test code
+//        if (Input.GetKey(KeyCode.S))
+//        {
+//            DoSpawnBullet(clientsPlayer.transform.position, clientsPlayer.transform.forward.x,
+//                clientsPlayer.transform.forward.z);
+//        }
+
+
+        if (avatarVelocity.sqrMagnitude > currMaxVelSq)
+        {
+            avatarVelocity = avatarVelocity.normalized * currMaxVel;
         }
 /*
         else if (Input.GetKey(KeyCode.Keypad7))
@@ -684,13 +788,10 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     }
     public void DoSpawnBullet(Vector3 pos, float fwX, float fwZ)
     {
-        // how fast the bullet would move on the server since the unity world is 20x bigger we scale it down
-        Vector2 bulletVelocity = new Vector2(fwX, fwZ) * (DemoSettings.bulletSpeed);
-        Debug.Log("bullet vel " + bulletVelocity.ToString());
-        bulletVelocity += avatarVelocity;    // add factor of velocity that comes from ship
-       // bulletVelocity /= DemoSettings.bulletSpeed;
+        //bulletVelocity += avatarVelocity;    // add factor of velocity that comes from ship moved to server
+
         Operations.FireBullet(Game,new Vector(pos.x, pos.z, 0)/ WorldToUnityFactor, 
-            new Vector(bulletVelocity.x, bulletVelocity.y, 0), avatarVelocity.x, avatarVelocity.y, true);
+            new Vector(fwX, fwZ, 0), avatarVelocity.x, avatarVelocity.y, true);
     }
     
     #endregion

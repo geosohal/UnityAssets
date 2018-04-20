@@ -1670,7 +1670,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 798f78eafd2e8834ca65aa6dbe449671, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  controlsType: 0
+  controlsType: 1
   DebugLog: 1
   ActorPrefab: {fileID: 154608, guid: 92a75daa6e836a14d83fb065fcf8097e, type: 2}
   BulletPrefab: {fileID: 1567486567521022, guid: efc618666a71dcf4ca369a46932e3931,
@@ -1683,7 +1683,11 @@ MonoBehaviour:
   AreaUnitsYText: {fileID: 313086422}
   ThrustForce: 1
   MaxVel: 180
+  breakDampFactor: 0.96
+  megaThrustFactor: 3
+  megaMaxVelFactor: 3
   maxVelSq: 32400
+  MegaThrustFadePerSec: 50
 --- !u!4 &1533060146
 Transform:
   m_ObjectHideFlags: 0
@@ -1835,7 +1839,7 @@ MeshRenderer:
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
   m_Materials:
-  - {fileID: 2100000, guid: 8f0d949b1514114409ec06926fbe614f, type: 2}
+  - {fileID: 2100000, guid: faae90de717b71346bbc5b1885d3e82f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
