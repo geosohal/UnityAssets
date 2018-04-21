@@ -695,7 +695,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         
         if (Input.GetKey((KeyCode.E)))
         {
-            avatarVelocity *= breakDampFactor;
+            Game.Avatar.ApplyBreak();
         }
         // test code
 //        if (Input.GetKey(KeyCode.S))
