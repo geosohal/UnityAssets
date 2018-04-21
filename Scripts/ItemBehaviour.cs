@@ -110,7 +110,7 @@ public class ItemBehaviour : MonoBehaviour
         }
         else if (this.item.IsMine == false) // set rotations of other ships using their item rotations
         {
-            Vector3 shipForward = new Vector3(this.item.Rotation.X, this.item.Rotation.Y, this.item.Rotation.Z);
+            Vector3 shipForward = new Vector3(this.item.Rotation.X, 0, this.item.Rotation.Y);
             transform.rotation = Quaternion.LookRotation(shipForward.normalized, Vector3.up);
         }
 
@@ -156,8 +156,8 @@ public class ItemBehaviour : MonoBehaviour
         if (this.item.ViewDistanceEnter.X > 0 && this.item.ViewDistanceEnter.Y > 0)
         {
             this.actorView.transform.localScale =
-                new Vector3(this.item.ViewDistanceEnter.X, this.item.ViewDistanceEnter.Y,
-                    this.item.ViewDistanceEnter.Z) * RunBehaviour.WorldToUnityFactor;
+                new Vector3(this.item.ViewDistanceEnter.X, 0,
+                    this.item.ViewDistanceEnter.Y) * RunBehaviour.WorldToUnityFactor;
             this.actorView.transform.localScale *=
                 2; // ViewDistanceEnter is +/- units from the item's position. So we have to double the quad-scale.
         }
@@ -170,7 +170,7 @@ public class ItemBehaviour : MonoBehaviour
         if (this.item.ViewDistanceExit.X > 0 && this.item.ViewDistanceExit.Y > 0)
         {
             this.actorViewExit.transform.localScale =
-                new Vector3(this.item.ViewDistanceExit.X, this.item.ViewDistanceExit.Y, this.item.ViewDistanceExit.Z) *
+                new Vector3(this.item.ViewDistanceExit.X, 0, this.item.ViewDistanceExit.Y) *
                 RunBehaviour.WorldToUnityFactor;
             this.actorViewExit.transform.localScale *=
                 2; // ViewDistanceExit is +/- units from the item's position. So we have to double the quad-scale.

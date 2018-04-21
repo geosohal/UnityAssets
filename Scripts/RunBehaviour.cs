@@ -83,6 +83,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     private float currMegaThrust = 1f;
     private float currMaxVel;
     private float currMaxVelSq;
+    private bool isMegaThrusting;
     private List<SpecialAbility> abilities;
     
     private bool wasTeleported = false;
@@ -112,7 +113,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         actorTable = new Dictionary<string, ItemBehaviour>();
         avatarVelocity = new Vector2(0,0);
         maxVelSq = MaxVel * MaxVel;
-        lastRotStored = new Vector(1,0,0);
+        lastRotStored = new Vector(1,0);
         controlsType = ControlsType.DirectionFirst;
         maxVelSq = MaxVel * MaxVel;
         currMaxVelSq = maxVelSq;
@@ -121,6 +122,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         SpecialAbility tpability = new SpecialAbility(2f, KeyCode.Mouse0, SpecialAbility.SpecialType.Teleport);
         abilities.Add(tpability);
         wasTeleported = false;
+        isMegaThrusting = false;
     }
 
     public void Start()
@@ -144,7 +146,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         // set default interest area size
         InterestArea area;
                   Game.TryGetCamera(0, out area);
-                  Vector viewDistance = new Vector(8001,8001,0);
+                  Vector viewDistance = new Vector(8001,8001);
                   viewDistance.X = Math.Max(0, viewDistance.X - (Game.WorldData.TileDimensions.X/2));
                   viewDistance.Y = Math.Max(0, viewDistance.Y - (Game.WorldData.TileDimensions.Y/2));
           
@@ -182,6 +184,12 @@ public class RunBehaviour : MonoBehaviour, IGameListener
                             Ray ray = UnityEngine.Camera.main.ScreenPointToRay(Input.mousePosition);
                             RaycastHit hit;
                             MoveActorToMousePosition();
+                            if (this.lastRotation.HasValue)
+                                Game.Avatar.MoveAbsolute(this.lastMovePosition.Value, (Vector)this.lastRotation);
+                            else
+                                Game.Avatar.MoveAbsolute(this.lastMovePosition.Value, Game.Avatar.Rotation);
+                            Cursor.lockState = CursorLockMode.Locked;
+                            Cursor.lockState = CursorLockMode.None; 
                             wasTeleported = true;
                             break;
                     }
@@ -189,10 +197,10 @@ public class RunBehaviour : MonoBehaviour, IGameListener
             }
         }
 
-        if (avatarVelocity.sqrMagnitude > 0.1f && !wasTeleported)
-        {
-            MoveRelative(new Vector(avatarVelocity.x, avatarVelocity.y) * elapsedSec);
-        }
+//        if (avatarVelocity.sqrMagnitude > 0.1f && !wasTeleported)
+//        {
+//            MoveRelative(new Vector(avatarVelocity.x, avatarVelocity.y) * elapsedSec);
+//        }
 
         
         lastTime = Time.time;
@@ -246,7 +254,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     private void CreateBullet(Item bulletItem)
     {
         //Operations.SpawnItem(Game, Game.Avatar.Id + "_blt_" + RandomString(5), ItemType.Bullet, new Vector(pos.x, pos.y, pos.z), new Vector(velX,0,velZ), null, true );
-        GameObject newbullet = Instantiate(BulletPrefab, new Vector3(bulletItem.Position.X, 0, bulletItem.Position.Z)* WorldToUnityFactor, 
+        GameObject newbullet = Instantiate(BulletPrefab, new Vector3(bulletItem.Position.X, 0, bulletItem.Position.Y)* WorldToUnityFactor, 
             Quaternion.LookRotation( new Vector3(bulletItem.Rotation.X, 0, bulletItem.Rotation.Y)) );
         Debug.Log("brot:" + bulletItem.Rotation.ToString());
         Bullet bull = newbullet.GetComponent<Bullet>();
@@ -504,13 +512,14 @@ public class RunBehaviour : MonoBehaviour, IGameListener
                 {
                     Vector lastRot = (Vector) lastRotation;
                     Game.Avatar.VelocityRotation(new Vector(avatarVelocity.x, avatarVelocity.y),
-                       new Vector(lastRot.X, lastRot.Z));
+                       new Vector(lastRot.X, lastRot.Y), isMegaThrusting);
                 }
                 else
                 {
-                    Debug.Log("null rot");
-                    Game.Avatar.VelocityRotation(new Vector(avatarVelocity.x, avatarVelocity.y), null);
+                    Debug.Log("warning null rotation shouldnt happen");
+                    Game.Avatar.VelocityRotation(new Vector(avatarVelocity.x, avatarVelocity.y), null, isMegaThrusting);
                 }
+                avatarVelocity = Vector2.zero;
             }
 
             // up to 20 times per second
@@ -610,26 +619,32 @@ public class RunBehaviour : MonoBehaviour, IGameListener
 
         if (Input.GetKey(KeyCode.LeftShift))
         {
-            currMegaThrust = megaThrustFactor;
-            currMaxVel = MaxVel*megaMaxVelFactor;
-            currMaxVelSq = currMaxVel*currMaxVel;
+            isMegaThrusting = true;
         }
         else
         {
-            currMegaThrust = 1f;
-            if (currMaxVel > MaxVel)
-            {
-                currMaxVel -= MegaThrustFadePerSec * elapsedSec;
-                currMaxVelSq = currMaxVel * currMaxVel;
-            }
-            else
-            {
-                currMaxVel = MaxVel;
-                currMaxVelSq = maxVelSq;
-            }
-            
-            
+            isMegaThrusting = false;
         }
+//            currMegaThrust = megaThrustFactor;
+//            currMaxVel = MaxVel*megaMaxVelFactor;
+//            currMaxVelSq = currMaxVel*currMaxVel;
+//        }
+//        else
+//        {
+//            currMegaThrust = 1f;
+//            if (currMaxVel > MaxVel)
+//            {
+//                currMaxVel -= MegaThrustFadePerSec * elapsedSec;
+//                currMaxVelSq = currMaxVel * currMaxVel;
+//            }
+//            else
+//            {
+//                currMaxVel = MaxVel;
+//                currMaxVelSq = maxVelSq;
+//            }
+//            
+//            
+//        }
 
         if (controlsType == ControlsType.WasdFirst)
         {
@@ -654,7 +669,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         {
             if (Input.GetKey(KeyCode.W))
             {
-                avatarVelocity += new Vector2(lastRotStored.X, lastRotStored.Z) * ThrustForce * currMegaThrust;
+                avatarVelocity += new Vector2(lastRotStored.X, lastRotStored.Y) * ThrustForce * currMegaThrust;
 
                 ParticleSystem[] psystems = clientsPlayer.GetComponentsInChildren<ParticleSystem>();
                 foreach (ParticleSystem ps in psystems)
@@ -666,7 +681,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
             }
             else if (Input.GetKey(KeyCode.S))
             {
-                avatarVelocity -= new Vector2(lastRotStored.X, lastRotStored.Z) * ThrustForce * currMegaThrust;
+                avatarVelocity -= new Vector2(lastRotStored.X, lastRotStored.Y) * ThrustForce * currMegaThrust;
                 
                 ParticleSystem[] psystems = clientsPlayer.GetComponentsInChildren<ParticleSystem>();
                 foreach (ParticleSystem ps in psystems)
@@ -690,30 +705,11 @@ public class RunBehaviour : MonoBehaviour, IGameListener
 //        }
 
 
-        if (avatarVelocity.sqrMagnitude > currMaxVelSq)
-        {
-            avatarVelocity = avatarVelocity.normalized * currMaxVel;
-        }
-/*
-        else if (Input.GetKey(KeyCode.Keypad7))
-        {
-            MoveRelative(Game.MoveUpLeft);
-        }
+//        if (avatarVelocity.sqrMagnitude > currMaxVelSq)
+//        {
+//            avatarVelocity = avatarVelocity.normalized * currMaxVel;
+//        }
 
-        else if (Input.GetKey(KeyCode.Keypad9))
-        {
-            MoveRelative(Game.MoveUpRight);
-        }
-
-        else if (Input.GetKey(KeyCode.Keypad1))
-        {
-            MoveRelative(Game.MoveDownLeft);
-        }
-
-        else if (Input.GetKey(KeyCode.Keypad3))
-        {
-            MoveRelative(Game.MoveDownRight);
-        }*/
 
         // for some reason, a German keyboard's '+' will result in a Equals key. Anywhere else, this should be '+', too. I hope.
         if (Input.GetKey(KeyCode.RightBracket))
@@ -772,10 +768,10 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     #region player initiated operations
     
     // precondition: updated rotation of avatar has been set
-    public void DoRotationOnly(Vector3 rotation)
+    public void DoRotationOnly(Vector3 newforward)
     {
-        this.lastRotation = new Vector(rotation.x, rotation.y, rotation.z);
-        this.lastRotStored = new Vector(rotation.x, rotation.y, rotation.z);
+        this.lastRotation = new Vector(newforward.x, newforward.z);
+        this.lastRotStored = new Vector(newforward.x, newforward.z);
         //Game.Avatar.MoveAbsolute(Game.Avatar.Position, Game.Avatar.Rotation);
     }
 
@@ -790,8 +786,8 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     {
         //bulletVelocity += avatarVelocity;    // add factor of velocity that comes from ship moved to server
 
-        Operations.FireBullet(Game,new Vector(pos.x, pos.z, 0)/ WorldToUnityFactor, 
-            new Vector(fwX, fwZ, 0), avatarVelocity.x, avatarVelocity.y, true);
+        Operations.FireBullet(Game,new Vector(pos.x, pos.z)/ WorldToUnityFactor, 
+            new Vector(fwX, fwZ), avatarVelocity.x, avatarVelocity.y, true);
     }
     
     #endregion

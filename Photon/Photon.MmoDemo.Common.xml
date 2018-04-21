@@ -6,7 +6,7 @@
     <members>
         <member name="T:Photon.MmoDemo.Common.BoundingBox">
             <summary>
-            The 3D floating point bounding box.
+            The 2D floating point bounding box. - modified to be rectangle
             </summary>
         </member>
         <!-- Badly formed XML comment ignored for member "T:Photon.MmoDemo.Common.EventCode" -->

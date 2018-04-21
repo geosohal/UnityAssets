@@ -300,7 +300,7 @@ MonoBehaviour:
   bullet: {fileID: 1567486567521022, guid: efc618666a71dcf4ca369a46932e3931, type: 2}
   waitTime: 0.2
   healthBar: {fileID: 0}
-  tiltDamper: 0.92
+  tiltDamper: 0.97
 --- !u!114 &11497700
 MonoBehaviour:
   m_ObjectHideFlags: 1
