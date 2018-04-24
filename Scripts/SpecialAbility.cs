@@ -1,6 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Assertions.Comparers;
+using UnityEngine.UI;
 
 public class SpecialAbility : MonoBehaviour
 {
@@ -15,18 +17,24 @@ public class SpecialAbility : MonoBehaviour
 	public float TimeToRecharge;
 	public KeyCode KeyMapping;
 	public SpecialType specialType;
+	public float mpCost;
 
 	protected float timeLettForRecharge;
 	protected bool isCharging;
+
+	private Text hud;
+
 	
 	// Use this for initialization
-	public SpecialAbility(float timeToRecharge, KeyCode activatingKey, SpecialType eSpecial)
+	public SpecialAbility(float timeToRecharge, KeyCode activatingKey, SpecialType eSpecial, Text hudText, float mp)
 	{
 		this.TimeToRecharge = timeToRecharge;
 		KeyMapping = activatingKey;
 		specialType = eSpecial;
 		timeLettForRecharge = 0;
 		isCharging = false;
+		hud = hudText;
+		mpCost = mp;
 	}
 	
 	// Update is called once per frame
@@ -34,8 +42,9 @@ public class SpecialAbility : MonoBehaviour
 	{
 		if (timeLettForRecharge > 0)
 			isCharging = true;
-		else
+		else if (isCharging)
 		{
+			hud.text = "Special Ready: " + specialType.ToString();
 			isCharging = false;
 		}
 		

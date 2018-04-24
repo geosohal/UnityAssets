@@ -42,6 +42,8 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     public GameObject ActorPrefab; // to be set in Inspector. the prefab for items/actors
     public GameObject BulletPrefab;
     public GameObject BotPrefab;
+    public GameObject UpdateText;
+    public SimpleHealthBar mpBar;
 
     /// <summary>
     /// defines how world-units get translated to unity-units.
@@ -91,7 +93,22 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     private bool wasTeleported = false;
 
     private bool isBursting;
-    private int timeToIncreaseView = 12;
+    private int timeToIncreaseView = 18;
+    
+    private float hudTime;    // make shift hud vars
+    private float timeToFadehud = 1.5f;
+    private string lastText;
+    private bool hudon = false;
+
+    private float maxMP = 50f;
+    private float MPpersec = 3f;
+    private float currMP = 5f;
+
+    private float mpCostPerSec = 3f;
+    private float tpCost = 9f;
+    private float burstCost = 7f;
+    private float saberCost = 10f;
+    private float laserCost = 7f;
 
     public Game Game
     {
@@ -124,13 +141,14 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         currMaxVelSq = maxVelSq;
         currMaxVel = MaxVel;
         abilities = new List<SpecialAbility>();
-        SpecialAbility tpability = new SpecialAbility(2f, KeyCode.Mouse0, SpecialAbility.SpecialType.Teleport);
+        Text hudText = UpdateText.GetComponent<Text>();
+        SpecialAbility tpability = new SpecialAbility(2f, KeyCode.Mouse0, SpecialAbility.SpecialType.Teleport, hudText, tpCost);
         abilities.Add(tpability);
-        SpecialAbility burstAbility = new SpecialAbility(5f, KeyCode.Space, SpecialAbility.SpecialType.Burst);
+        SpecialAbility burstAbility = new SpecialAbility(5f, KeyCode.Space, SpecialAbility.SpecialType.Burst, hudText, burstCost);
         abilities.Add((burstAbility));
-        SpecialAbility saberAbility = new SpecialAbility(12f, KeyCode.F, SpecialAbility.SpecialType.Saber);
+        SpecialAbility saberAbility = new SpecialAbility(12f, KeyCode.F, SpecialAbility.SpecialType.Saber, hudText, saberCost);
         abilities.Add(saberAbility);
-        SpecialAbility laserAbility = new SpecialAbility(4f, KeyCode.D, SpecialAbility.SpecialType.Laser );
+        SpecialAbility laserAbility = new SpecialAbility(4f, KeyCode.D, SpecialAbility.SpecialType.Laser, hudText, laserCost );
         abilities.Add((laserAbility));
         wasTeleported = false;
         isMegaThrusting = false;
@@ -166,6 +184,10 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         // access this client's avatar via:
         // this.Game.Avatar
         lastTime = 0;
+
+        lastText = UpdateText.GetComponent<Text>().text;
+        hudTime = 0;
+        mpBar = GameObject.FindWithTag("mpbar").GetComponent<SimpleHealthBar>();
     }
 
 
@@ -173,6 +195,29 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     {
         float elapsedSec = Time.time - lastTime;
         Game.Update();
+
+        currMP += MPpersec * elapsedSec;
+        mpBar.UpdateBar(currMP, maxMP );
+        // some temp hud updating
+        // if hud was just changed
+        if (hudTime <= 0 && !lastText.Equals(UpdateText.GetComponent<Text>().text) && !lastText.Equals(" "))
+        {
+            hudTime = timeToFadehud;
+            hudon = true;
+        }
+
+        if (hudon && hudTime > 0)
+            hudTime -= elapsedSec;
+        if (hudon && hudTime < 0)
+        {
+            UpdateText.GetComponent<Text>().text = " ";
+            hudon = false;
+            hudTime = 0;
+
+        }
+
+        lastText = UpdateText.GetComponent<Text>().text;
+            
 
         if (timeToIncreaseView > 0)
         {
@@ -193,8 +238,9 @@ public class RunBehaviour : MonoBehaviour, IGameListener
             foreach (SpecialAbility sa in abilities)
             {
                 sa.UpdateTimer(elapsedSec);
-                if (sa.IsChargedAndKeyPressed())
+                if (sa.IsChargedAndKeyPressed() && currMP > sa.mpCost)
                 {
+                    currMP -= sa.mpCost;
                     sa.ResetChargeTimer();
                     switch (sa.specialType)
                     {
@@ -223,16 +269,25 @@ public class RunBehaviour : MonoBehaviour, IGameListener
                 }
             }
 
-            // update specials timers in each actor for View effects
+            // update specials timers in each actor/ship for View effects
             foreach (KeyValuePair<string,ItemBehaviour> kvp in actorTable)
             {
-                ItemBehaviour ib = kvp.Value;
+                ItemBehaviour ib = kvp.Value;    // ib of ship
+                
+                // if saber was just turned on for this ship/actor
+                if (ib.saberTimeLeft <= 0 && ib.item.IsSaberFiring)
+                    OnSaberFired(ib);
+                // if laser was just turned on for this ship/actor
+                if (ib.laserTimeLeft <= 0 && ib.item.IsLaserFiring)
+                    OnLaserFired(ib);
+                
                 if (ib.laserTimeLeft > 0)
                 {
                     ib.laserTimeLeft -= elapsedSec;
                     // laser just turned off so turn off its graphics for the players ship
                     if (ib.laserTimeLeft <= 0)
                     {
+                        ib.item.IsLaserFiring = false;
                         MeshRenderer[] mrs = ib.GetComponentsInChildren<MeshRenderer>();
                         foreach (MeshRenderer mr in mrs)
                         {
@@ -251,6 +306,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
                     // saber just turned off so turn off its graphics for the players ship
                     if (ib.saberTimeLeft <= 0)
                     {
+                        ib.item.IsSaberFiring = false;
                         MeshRenderer[] mrs = ib.GetComponentsInChildren<MeshRenderer>();
                         foreach (MeshRenderer mr in mrs)
                         {
@@ -604,8 +660,8 @@ public class RunBehaviour : MonoBehaviour, IGameListener
                 {
                     Vector lastRot = (Vector) lastRotation;
                     System.Random r = new System.Random();
-                    if (r.Next(100) < 3)
-                        Debug.Log("lastrot " + lastRot.ToString());
+                   // if (r.Next(100) < 3)
+                     //   Debug.Log("lastrot " + lastRot.ToString());
                     Game.Avatar.VelocityRotation(new Vector(avatarVelocity.x, avatarVelocity.y),
                        new Vector(lastRot.X, lastRot.Y), isMegaThrusting);
                 }
@@ -712,9 +768,10 @@ public class RunBehaviour : MonoBehaviour, IGameListener
             }
         }
 
-        if (Input.GetKey(KeyCode.LeftShift))
+        if (currMP > 0 && Input.GetKey(KeyCode.LeftShift))
         {
             isMegaThrusting = true;
+            currMP -= mpCostPerSec* elapsedSec;
         }
         else
         {
@@ -839,12 +896,13 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         }
     }
     
-    public void OnLaserFired(string itemId)
+    public void OnLaserFired(ItemBehaviour ib)
     {
-        Debug.Log("Laser Fired operation received for " + itemId);
-        ItemBehaviour ib = actorTable[itemId];
+        Debug.Log("Laser Fired operation received for " + ib.item.Id);
+
         if (ib != null)
         {
+            ib.laserTimeLeft = ib.mlaserTimeLeft;
             Debug.Log("lasr adv");
             MeshRenderer[] mrs = ib.GetComponentsInChildren<MeshRenderer>();
             foreach (MeshRenderer mr in mrs)
@@ -856,17 +914,16 @@ public class RunBehaviour : MonoBehaviour, IGameListener
                     break;
                 }
             }
-
-            ib.laserTimeLeft = ib.mlaserTimeLeft;
         }
     }
 
-    public void OnSaberFired(string itemId)
+    public void OnSaberFired(ItemBehaviour ib)
     {
-        Debug.Log("saber Fired operation received for" + itemId);
-        ItemBehaviour ib = actorTable[itemId];
+        Debug.Log("saber Fired operation received for" + ib.item.Id);
+        
         if (ib != null)
         {
+            ib.saberTimeLeft = ib.msaberTimeLeft;
             Debug.Log("saber adv");
             MeshRenderer[] mrs = ib.GetComponentsInChildren<MeshRenderer>();
             foreach (MeshRenderer mr in mrs)
@@ -878,8 +935,6 @@ public class RunBehaviour : MonoBehaviour, IGameListener
                     break;
                 }
             }
-
-            ib.saberTimeLeft = ib.msaberTimeLeft;
         }
     }
 

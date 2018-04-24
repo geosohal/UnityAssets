@@ -18,7 +18,7 @@ public class ItemBehaviour : MonoBehaviour
     public Text actorText;
     public GameObject actorView;
     public GameObject actorViewExit;
-    public int maxHealth = 100;
+    public int maxHealth = 9000;
 
 
     public Item item;
@@ -37,12 +37,12 @@ public class ItemBehaviour : MonoBehaviour
     public float tiltDamper=.62f;
     private float timeBetweenUpdates; // time for updates from server
 
-    public float mlaserTimeLeft = .8f;
+    public float mlaserTimeLeft = 1f;
     public float msaberTimeLeft = 4f;
 
 
-    public float laserTimeLeft = 0;
-    public float saberTimeLeft = 0;
+    public float laserTimeLeft = -1;
+    public float saberTimeLeft = -1;
     
 
     public void Destroy()
@@ -240,6 +240,9 @@ public class ItemBehaviour : MonoBehaviour
         {
             foreach (var render in renderers)
             {
+                // dont toggle renderer for specials, only the specials toggle those
+                if (render.gameObject.tag == "laser" || render.gameObject.tag == "saber")
+                    continue;
                 render.enabled = show;
             }
 
