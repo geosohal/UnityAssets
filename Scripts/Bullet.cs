@@ -37,6 +37,7 @@ public class Bullet : MonoBehaviour
 		if (this.item == null)
 		{
 			Debug.Log("bullet waz destroyed");
+			
 			return;
 			
 		}
