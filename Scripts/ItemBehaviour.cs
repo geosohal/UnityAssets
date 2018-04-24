@@ -35,7 +35,15 @@ public class ItemBehaviour : MonoBehaviour
     public SimpleHealthBar healthBar;
     private float shipTilt;
     public float tiltDamper=.62f;
-    private float timeBetweenUpdates;
+    private float timeBetweenUpdates; // time for updates from server
+
+    public float mlaserTimeLeft = .8f;
+    public float msaberTimeLeft = 4f;
+
+
+    public float laserTimeLeft = 0;
+    public float saberTimeLeft = 0;
+    
 
     public void Destroy()
     {
@@ -47,7 +55,7 @@ public class ItemBehaviour : MonoBehaviour
     {
         this.item = actorItem;
         this.name = name;
-
+        timeBetweenUpdates = .05f;
         transform.position = new Vector3(this.item.Position.X, transform.position.y, this.item.Position.Y) *
                              RunBehaviour.WorldToUnityFactor;
         currHealth = maxHealth;
@@ -55,7 +63,7 @@ public class ItemBehaviour : MonoBehaviour
         if (this.item.IsMine)
             GameObject.FindWithTag("MainCamera").GetComponent<CameraController>().playerShip = this.gameObject;
         ShowActor(false);
-        timeBetweenUpdates = .05f;
+        
     }
 
 

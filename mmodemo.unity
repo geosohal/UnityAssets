@@ -1670,11 +1670,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 798f78eafd2e8834ca65aa6dbe449671, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  controlsType: 1
+  controlsType: 0
   DebugLog: 1
   ActorPrefab: {fileID: 154608, guid: 92a75daa6e836a14d83fb065fcf8097e, type: 2}
   BulletPrefab: {fileID: 1567486567521022, guid: efc618666a71dcf4ca369a46932e3931,
     type: 2}
+  BotPrefab: {fileID: 1292070291436036, guid: d8c139497e8b77b49af7f7e1d249688a, type: 2}
   MaxUnityUnitsForWorld: 1000
   WorldNameText: {fileID: 1333589538}
   WorldXUnitsText: {fileID: 1777631920}

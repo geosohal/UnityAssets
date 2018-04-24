@@ -7,7 +7,10 @@ public class SpecialAbility : MonoBehaviour
 	public enum SpecialType
 	{
 		BasicBullet,
-		Teleport
+		Teleport,
+		Burst,
+		Saber,
+		Laser
 	};
 	public float TimeToRecharge;
 	public KeyCode KeyMapping;

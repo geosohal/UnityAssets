@@ -18,6 +18,7 @@ using System.Linq;
 using sysr = System.Random;
 using System.Collections.Generic;
 using System.Diagnostics;
+using UnityEngine.Experimental.Rendering;
 using Debug = UnityEngine.Debug;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -40,6 +41,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     public bool DebugLog; // to be set in inspector
     public GameObject ActorPrefab; // to be set in Inspector. the prefab for items/actors
     public GameObject BulletPrefab;
+    public GameObject BotPrefab;
 
     /// <summary>
     /// defines how world-units get translated to unity-units.
@@ -88,6 +90,9 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     
     private bool wasTeleported = false;
 
+    private bool isBursting;
+    private int timeToIncreaseView = 12;
+
     public Game Game
     {
         get { return this.game; }
@@ -121,6 +126,12 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         abilities = new List<SpecialAbility>();
         SpecialAbility tpability = new SpecialAbility(2f, KeyCode.Mouse0, SpecialAbility.SpecialType.Teleport);
         abilities.Add(tpability);
+        SpecialAbility burstAbility = new SpecialAbility(5f, KeyCode.Space, SpecialAbility.SpecialType.Burst);
+        abilities.Add((burstAbility));
+        SpecialAbility saberAbility = new SpecialAbility(12f, KeyCode.F, SpecialAbility.SpecialType.Saber);
+        abilities.Add(saberAbility);
+        SpecialAbility laserAbility = new SpecialAbility(4f, KeyCode.D, SpecialAbility.SpecialType.Laser );
+        abilities.Add((laserAbility));
         wasTeleported = false;
         isMegaThrusting = false;
     }
@@ -163,8 +174,13 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         float elapsedSec = Time.time - lastTime;
         Game.Update();
 
-        
-        
+        if (timeToIncreaseView > 0)
+        {
+            timeToIncreaseView--;
+            IncreaseViewDistance();
+            
+        }
+
         if (Game.WorldEntered)
         {
             // send queued velocity 20 times/sec
@@ -172,6 +188,8 @@ public class RunBehaviour : MonoBehaviour, IGameListener
             
 
             ReadKeyboardInput(elapsedSec);
+            
+            // update special abilities and activate if their key is pressed
             foreach (SpecialAbility sa in abilities)
             {
                 sa.UpdateTimer(elapsedSec);
@@ -188,14 +206,65 @@ public class RunBehaviour : MonoBehaviour, IGameListener
                                 Game.Avatar.MoveAbsolute(this.lastMovePosition.Value, (Vector)this.lastRotation);
                             else
                                 Game.Avatar.MoveAbsolute(this.lastMovePosition.Value, Game.Avatar.Rotation);
-                            Cursor.lockState = CursorLockMode.Locked;
-                            Cursor.lockState = CursorLockMode.None; 
+
                             wasTeleported = true;
+                            break;
+                        
+                        case SpecialAbility.SpecialType.Burst:
+                            Game.Avatar.ApplyBurst();
+                            break;
+                        case SpecialAbility.SpecialType.Saber:
+                            Game.Avatar.FireSaber();
+                            break;
+                        case SpecialAbility.SpecialType.Laser:
+                            Game.Avatar.FireLaser();
                             break;
                     }
                 }
             }
-        }
+
+            // update specials timers in each actor for View effects
+            foreach (KeyValuePair<string,ItemBehaviour> kvp in actorTable)
+            {
+                ItemBehaviour ib = kvp.Value;
+                if (ib.laserTimeLeft > 0)
+                {
+                    ib.laserTimeLeft -= elapsedSec;
+                    // laser just turned off so turn off its graphics for the players ship
+                    if (ib.laserTimeLeft <= 0)
+                    {
+                        MeshRenderer[] mrs = ib.GetComponentsInChildren<MeshRenderer>();
+                        foreach (MeshRenderer mr in mrs)
+                        {
+                            if (mr.gameObject.tag == "laser")
+                            {
+                                mr.enabled = false;
+                                break;
+                            }
+                        }
+                    } // if (ib.laserTimeLeft <= 0)
+                }
+
+                if (ib.saberTimeLeft > 0)
+                {
+                    ib.saberTimeLeft -= elapsedSec;
+                    // saber just turned off so turn off its graphics for the players ship
+                    if (ib.saberTimeLeft <= 0)
+                    {
+                        MeshRenderer[] mrs = ib.GetComponentsInChildren<MeshRenderer>();
+                        foreach (MeshRenderer mr in mrs)
+                        {
+                            if (mr.gameObject.tag == "saber")
+                            {
+                                mr.enabled = false;
+                                break;
+                            }
+                        }
+                    } // if (ib.laserTimeLeft <= 0)
+                }
+            } // foreach ib (actor) in actor table
+            
+        } // if gameworld entered
 
 //        if (avatarVelocity.sqrMagnitude > 0.1f && !wasTeleported)
 //        {
@@ -220,12 +289,12 @@ public class RunBehaviour : MonoBehaviour, IGameListener
             {
                 if (Event.current.delta.y < 0)
                 {
-                    DecreaseViewDistance();
+                  //  DecreaseViewDistance();
                     
                 }
                 else if (Event.current.delta.y > 0)
                 {
-                    IncreaseViewDistance();
+                   // IncreaseViewDistance();
                 }
             }
             else if (Event.current.type == EventType.MouseDown)
@@ -282,8 +351,38 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         }
     }
 
+    private void CreateBot(Item bot)
+    {
+        GameObject newbot = Instantiate(BotPrefab, new Vector3(bot.Position.X, 0, bot.Position.Y) * WorldToUnityFactor,
+            Quaternion.identity);
+        BotBehaviour bb = newbot.GetComponent<BotBehaviour>();
+        if (bb == null)
+            bb = newbot.AddComponent(typeof (BotBehaviour)) as BotBehaviour;
+        bb.Initialize(this.Game, bot, this.ItemObjectName(bot), null);
+        
+        Debug.Log("made bot on client");
+        
+    }
+
     #region IGameListener
 
+    public void OnItemAdded(Item item)
+    {
+        if (Game != null)
+        {
+            if (IsDebugLogEnabled)
+            {
+                Debug.Log("add item " + item.Id);
+            }
+            if (item.Id.StartsWith("bt"))
+                CreateBullet(item);
+            else if (item.Id.StartsWith("bo"))
+                CreateBot(item);
+            else // create player
+                CreateActor(item);
+        }
+    }
+    
     public void LogDebug(object message)
     {
         Debug.Log(message);
@@ -326,20 +425,6 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     }
 
 
-    public void OnItemAdded(Item item)
-    {
-        if (Game != null)
-        {
-            if (IsDebugLogEnabled)
-            {
-                Debug.Log("add item " + item.Id);
-            }
-            if (item.Id.StartsWith("bt"))
-                CreateBullet(item);
-            else // create player
-                CreateActor(item);
-        }
-    }
 
 
     public void OnItemRemoved(Item item)
@@ -455,7 +540,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
 
         Debug.Log("Adding player.");
         CreateActor(game.Avatar);
-		game.Avatar.MoveAbsolute(GetRandomPosition(), Vector.Zero);
+		game.Avatar.MoveAbsolute(GetRandomPosition(false), Vector.Zero);
         Operations.RadarSubscribe(game.Peer, game.WorldData.Name);
 
         // initialize the visual radar component
@@ -471,8 +556,15 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     }
 	
 	private readonly System.Random random = new System.Random();
-	private Vector GetRandomPosition()
+	private Vector GetRandomPosition(bool aroundMiddle)
 	{
+//	    if (aroundMiddle)
+//	    {
+//	        var d = game.WorldData.BoundingBox.Max - game.WorldData.BoundingBox.Min;
+//	        var dover4 = d / 4;
+//	        Vector min2 = new Vector(game.WorldData.BoundingBox.Min.X+d*2,game.WorldData.BoundingBox.Min.Y+d*2);
+//	        return game.WorldData.BoundingBox.Min + new Vector { X = d.X * (float)this.random.NextDouble(), Y = d.Y * (float)this.random.NextDouble() };
+//	    }
 		var d = game.WorldData.BoundingBox.Max - game.WorldData.BoundingBox.Min;
 		return game.WorldData.BoundingBox.Min + new Vector { X = d.X * (float)this.random.NextDouble(), Y = d.Y * (float)this.random.NextDouble() };
 	}
@@ -506,11 +598,14 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         if (Time.time > this.nextMoveTime)
         {
             
-            if (this.avatarVelocity.sqrMagnitude > .1f)
+          //  if (this.avatarVelocity.sqrMagnitude > .1f)
             {
                 if (this.lastRotation.HasValue)
                 {
                     Vector lastRot = (Vector) lastRotation;
+                    System.Random r = new System.Random();
+                    if (r.Next(100) < 3)
+                        Debug.Log("lastrot " + lastRot.ToString());
                     Game.Avatar.VelocityRotation(new Vector(avatarVelocity.x, avatarVelocity.y),
                        new Vector(lastRot.X, lastRot.Y), isMegaThrusting);
                 }
@@ -625,6 +720,8 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         {
             isMegaThrusting = false;
         }
+
+
 //            currMegaThrust = megaThrustFactor;
 //            currMaxVel = MaxVel*megaMaxVelFactor;
 //            currMaxVelSq = currMaxVel*currMaxVel;
@@ -742,9 +839,48 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         }
     }
     
-    public void OnLaserFired(string itemId, Vector position, Vector rotation)
+    public void OnLaserFired(string itemId)
     {
-        Debug.Log("Laser Fired operation received");
+        Debug.Log("Laser Fired operation received for " + itemId);
+        ItemBehaviour ib = actorTable[itemId];
+        if (ib != null)
+        {
+            Debug.Log("lasr adv");
+            MeshRenderer[] mrs = ib.GetComponentsInChildren<MeshRenderer>();
+            foreach (MeshRenderer mr in mrs)
+            {
+                if (mr.gameObject.tag == "laser")
+                {
+                    Debug.Log("lasr adv enable");
+                    mr.enabled = true;
+                    break;
+                }
+            }
+
+            ib.laserTimeLeft = ib.mlaserTimeLeft;
+        }
+    }
+
+    public void OnSaberFired(string itemId)
+    {
+        Debug.Log("saber Fired operation received for" + itemId);
+        ItemBehaviour ib = actorTable[itemId];
+        if (ib != null)
+        {
+            Debug.Log("saber adv");
+            MeshRenderer[] mrs = ib.GetComponentsInChildren<MeshRenderer>();
+            foreach (MeshRenderer mr in mrs)
+            {
+                if (mr.gameObject.tag == "saber")
+                {
+                    Debug.Log("saber enabled");
+                    mr.enabled = true;
+                    break;
+                }
+            }
+
+            ib.saberTimeLeft = ib.msaberTimeLeft;
+        }
     }
 
     public void OnHpChange(string itemId, int hpChange)

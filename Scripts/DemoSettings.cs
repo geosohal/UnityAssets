@@ -18,7 +18,7 @@ public class DemoSettings : Photon.MmoDemo.Client.Settings
         DemoSettings result = new DemoSettings();
 
         // photon
-        //result.ServerAddress = "73.118.224.14:5055";
+       // result.ServerAddress = "73.118.224.14:5055";
         result.ServerAddress = "localhost:5055";
         result.UseTcp = false;
         result.ApplicationName = "MmoDemo";
