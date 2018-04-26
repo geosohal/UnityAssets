@@ -275,7 +275,6 @@ public class RunBehaviour : MonoBehaviour, IGameListener
                             // play teleport out effect
                             GameObject neweffect = Instantiate(TpOutEffect, clientsPlayer.transform.position, Quaternion.identity);
                             Expirableffects.Add(new Tuple<GameObject, float>(neweffect, timeToDestroyExpirableEffect));
-                            Debug.Log("old pos: " +  clientsPlayer.transform.position.ToString());
                             
                             MoveActorToMousePosition();
                             if (this.lastRotation.HasValue)
@@ -288,9 +287,8 @@ public class RunBehaviour : MonoBehaviour, IGameListener
                             // play teleport in effect
                             
                             Vector3 newPos = new Vector3(lastMovePosition.Value.X, 0, lastMovePosition.Value.Y)*WorldToUnityFactor;
-                            Debug.Log("new pos: " + newPos.ToString());
+
                             GameObject effect = Instantiate(TpInEffect, newPos, Quaternion.identity);
-                            effect.name = "TPin" + clientsPlayer.item.Id;
                             Expirableffects.Add(new Tuple<GameObject, float>(effect, timeToDestroyExpirableEffect));;
                             break;
                         
@@ -299,6 +297,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
                             GameObject burst = Instantiate(BurstPrefab, clientsPlayer.transform.position, 
                                 clientsPlayer.transform.rotation);
                             burst.transform.localScale = new Vector3(2f,2f,2f);
+                            Expirableffects.Add(new Tuple<GameObject, float>(burst, timeToDestroyExpirableEffect));
                             break;
                         case SpecialAbility.SpecialType.Saber:
                             Game.Avatar.FireSaber();
@@ -367,9 +366,32 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         } // if gameworld entered
 
         UpdateExpirableEffects(elapsedSec);
+        DetectTeleportAndPlayEffect();
         
         lastTime = Time.time;
 
+    }
+
+    public void DetectTeleportAndPlayEffect()
+    {
+        foreach (var player in actorTable)
+        {
+            if (player.Value.item.PreviousPosition != null)
+            {
+                if (player.Value.SeemsToBeTeleporting())
+                {
+                    Vector3 prevPos = new Vector3(((Vector)player.Value.item.PreviousPosition).X,0,
+                        ((Vector)player.Value.item.PreviousPosition).Y) * WorldToUnityFactor;
+                    GameObject neweffect = Instantiate(TpOutEffect, prevPos, Quaternion.identity);
+                    Expirableffects.Add(new Tuple<GameObject, float>(neweffect, timeToDestroyExpirableEffect));
+                    
+                    Vector3 nextPos = new Vector3(player.Value.item.Position.X,0,player.Value.item.Position.Y)
+                        * WorldToUnityFactor;
+                    GameObject effect = Instantiate(TpInEffect, nextPos, Quaternion.identity);
+                    Expirableffects.Add(new Tuple<GameObject, float>(effect, timeToDestroyExpirableEffect));;
+                }
+            }
+        }
     }
 
     public void UpdateExpirableEffects(float elapsedSec)
@@ -1049,6 +1071,15 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         {
              actorTable[itemId].TakeDamage((hpChange));
         }
+    }
+
+    public void OnBurst(Vector pos)
+    {
+        Debug.Log("burst at " + pos.ToString());
+        GameObject burst = Instantiate(BurstPrefab, new Vector3(pos.X,0,pos.Y) * WorldToUnityFactor, Quaternion.identity);
+        burst.transform.localScale = new Vector3(2f,2f,2f);
+        Expirableffects.Add(new Tuple<GameObject, float>(burst, timeToDestroyExpirableEffect));
+        
     }
 
     public void OnBombSpawn(string itemId)

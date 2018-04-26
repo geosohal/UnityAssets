@@ -17,6 +17,7 @@ public class Bullet : MonoBehaviour
 	private Vector3 lastMoveUpdate;
 	private bool firstUpdate;
 	private float secondsTillUpdate = .012f; // based on how long server delays in sec to update bullet pos
+
 	
 	// Use this for initialization
 	void Start () {
@@ -41,7 +42,8 @@ public class Bullet : MonoBehaviour
 			return;
 			
 		}
-		
+
+
 		Vector3 newPos = new Vector3(this.item.Position.X, transform.position.y, this.item.Position.Y)*RunBehaviour.WorldToUnityFactor;
 
 		if (firstUpdate)
@@ -64,14 +66,9 @@ public class Bullet : MonoBehaviour
 			float lerpT = (Time.time - this.lastMoveUpdateTime)/secondsTillUpdate;
 			transform.position = Vector3.Lerp(transform.position, newPos, lerpT);
 		}
-		// MOVED TO SERVER
-		/*
-		transform.Translate(Vector3.forward * Time.deltaTime * speed);
-		currTime += Time.deltaTime;
-		if (currTime > maxTime)
-			Destroy(this.gameObject);
-			*/
-		
+
+
+
 	}
 
 	private void OnCollisionEnter2D(Collision2D collision)

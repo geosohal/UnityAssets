@@ -18,7 +18,7 @@ public class ItemBehaviour : MonoBehaviour
     public Text actorText;
     public GameObject actorView;
     public GameObject actorViewExit;
-    public int maxHealth = 9000;
+    public int maxHealth = 500;
 
 
     public Item item;
@@ -38,11 +38,15 @@ public class ItemBehaviour : MonoBehaviour
     private float timeBetweenUpdates; // time for updates from server
 
     public float mlaserTimeLeft = 1f;
-    public float msaberTimeLeft = 14f;
+    public float msaberTimeLeft = 9f;
 
 
     public float laserTimeLeft = -1;
     public float saberTimeLeft = -1;
+    
+    private Vector3 lastPos;
+    private float displacement2LastFrame;	// displacement made this last frame
+    private float displacement2Last2Frame;	// displacement made 2 frames ago
     
 
     public void Destroy()
@@ -78,6 +82,7 @@ public class ItemBehaviour : MonoBehaviour
             return;
         }
 
+        lastPos = transform.position;
         if (Math.Abs(shipTilt) > .25f)
             shipTilt *= tiltDamper;
         // set rotation of our ship
@@ -206,7 +211,24 @@ public class ItemBehaviour : MonoBehaviour
         {
             actorText.text = string.Format("{0}", this.item.Text);
         }
+        
+        displacement2Last2Frame = displacement2LastFrame;
+        displacement2LastFrame = (transform.position - lastPos).sqrMagnitude;
     }
+    
+    
+    public bool SeemsToBeTeleporting()
+    {
+        if (displacement2LastFrame > 400)
+        {
+            if (displacement2Last2Frame > 400)
+                return false;
+            return true;
+        }
+
+        return false;
+    }
+
 
     private void SetRotation(Vector3 newForward)
     {
