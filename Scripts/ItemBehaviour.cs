@@ -55,7 +55,7 @@ public class ItemBehaviour : MonoBehaviour
     {
         this.item = actorItem;
         this.name = name;
-        timeBetweenUpdates = .05f;
+        timeBetweenUpdates = .012f;
         transform.position = new Vector3(this.item.Position.X, transform.position.y, this.item.Position.Y) *
                              RunBehaviour.WorldToUnityFactor;
         currHealth = maxHealth;

@@ -50,6 +50,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     public GameObject BombPrefab;
     public GameObject TpOutEffect;
     public GameObject TpInEffect;
+    public GameObject HpBox;
     public SimpleHealthBar mpBar;
 
     public List<Tuple<GameObject,float>> Expirableffects;
@@ -120,8 +121,10 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     public float laserCost = 7f;
     public float bombCost = 10f;
     public float bulletCost = 3f;
+    public float shieldCost = 6f;
     
     private float timeToDestroyExpirableEffect = 8f;
+    public float secTillUpdate = .012f;
 
     public Game Game
     {
@@ -165,6 +168,8 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         abilities.Add((laserAbility));
         SpecialAbility bombAbility = new SpecialAbility(3f, KeyCode.A, SpecialAbility.SpecialType.Bomb, hudText, bombCost );
         abilities.Add(bombAbility);
+        SpecialAbility shieldAbility = new SpecialAbility(6f, KeyCode.C, SpecialAbility.SpecialType.Shield, hudText, bombCost );
+        abilities.Add(shieldAbility);
         wasTeleported = false;
         isMegaThrusting = false;
         Expirableffects = new List<Tuple<GameObject, float>>();
@@ -491,6 +496,14 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         bb.Initialize(bombItem);
     }
 
+    private void CreateHP(Item hpItem)
+    {
+        Debug.Log("making hp box");
+        GameObject newHp = Instantiate(HpBox,
+            new Vector3(hpItem.Position.X, 0, hpItem.Position.Y) * WorldToUnityFactor, Quaternion.identity);
+        newHp.name = hpItem.Id;
+    }
+
     #region IGameListener
 
     public void OnItemAdded(Item item)
@@ -507,6 +520,8 @@ public class RunBehaviour : MonoBehaviour, IGameListener
                 CreateBot(item);
             else if (item.Id.StartsWith("zz"))
                 CreateBomb(item);
+            else if (item.Id.StartsWith("hp"))
+                CreateHP(item);
             else // create player
                 CreateActor(item);
         }
@@ -563,10 +578,17 @@ public class RunBehaviour : MonoBehaviour, IGameListener
             objName = item.Id;
         else if (item.Type == ItemType.Bomb)
         {
+            
             objName = item.Id;
             GameObject bomb = GameObject.Find(objName);
             bomb.GetComponent<BombBehavior>().Explode();
             return;
+        }
+        else if (item.Type == ItemType.Resource)
+        {
+            Debug.Log("removing hp box");
+            objName = item.Id;
+            Destroy(GameObject.Find(objName));
         }
         else 
             objName = this.ItemObjectName(item);
@@ -754,7 +776,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
             }
 
             // up to 20 times per second
-            this.nextMoveTime = Time.time + 0.05f;
+            this.nextMoveTime = Time.time + secTillUpdate;
         }
     }
 

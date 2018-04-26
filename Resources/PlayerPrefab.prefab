@@ -304,7 +304,7 @@ MonoBehaviour:
   healthBar: {fileID: 0}
   tiltDamper: 0.97
   mlaserTimeLeft: 0.8
-  msaberTimeLeft: 4
+  msaberTimeLeft: 14
   laserTimeLeft: 0
   saberTimeLeft: 0
 --- !u!114 &11497700
