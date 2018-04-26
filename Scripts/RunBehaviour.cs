@@ -9,6 +9,8 @@
 
 
 using System;
+using System.Collections.Generic;
+using System.Collections;
 using ExitGames.Client.Photon;
 using Photon.MmoDemo.Client;
 using Photon.MmoDemo.Common;
@@ -18,6 +20,7 @@ using System.Linq;
 using sysr = System.Random;
 using System.Collections.Generic;
 using System.Diagnostics;
+//using NUnit.Framework.Constraints;
 using UnityEngine.Experimental.Rendering;
 using Debug = UnityEngine.Debug;
 #if UNITY_EDITOR
@@ -43,7 +46,13 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     public GameObject BulletPrefab;
     public GameObject BotPrefab;
     public GameObject UpdateText;
+    public GameObject BurstPrefab;
+    public GameObject BombPrefab;
+    public GameObject TpOutEffect;
+    public GameObject TpInEffect;
     public SimpleHealthBar mpBar;
+
+    public List<Tuple<GameObject,float>> Expirableffects;
 
     /// <summary>
     /// defines how world-units get translated to unity-units.
@@ -100,15 +109,19 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     private string lastText;
     private bool hudon = false;
 
-    private float maxMP = 50f;
-    private float MPpersec = 3f;
-    private float currMP = 5f;
+    public float maxMP = 200f;
+    public float MPpersec = 3f;
+    private float currMP;
 
-    private float mpCostPerSec = 3f;
-    private float tpCost = 9f;
-    private float burstCost = 7f;
-    private float saberCost = 10f;
-    private float laserCost = 7f;
+    public float thrustCostPerSec = 4f;
+    public float tpCost = 9f;
+    public float burstCost = 7f;
+    public float saberCost = 10f;
+    public float laserCost = 7f;
+    public float bombCost = 10f;
+    public float bulletCost = 3f;
+    
+    private float timeToDestroyExpirableEffect = 8f;
 
     public Game Game
     {
@@ -150,8 +163,12 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         abilities.Add(saberAbility);
         SpecialAbility laserAbility = new SpecialAbility(4f, KeyCode.D, SpecialAbility.SpecialType.Laser, hudText, laserCost );
         abilities.Add((laserAbility));
+        SpecialAbility bombAbility = new SpecialAbility(3f, KeyCode.A, SpecialAbility.SpecialType.Bomb, hudText, bombCost );
+        abilities.Add(bombAbility);
         wasTeleported = false;
         isMegaThrusting = false;
+        Expirableffects = new List<Tuple<GameObject, float>>();
+        currMP = maxMP;
     }
 
     public void Start()
@@ -188,6 +205,8 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         lastText = UpdateText.GetComponent<Text>().text;
         hudTime = 0;
         mpBar = GameObject.FindWithTag("mpbar").GetComponent<SimpleHealthBar>();
+        
+        
     }
 
 
@@ -247,6 +266,12 @@ public class RunBehaviour : MonoBehaviour, IGameListener
                         case SpecialAbility.SpecialType.Teleport:
                             Ray ray = UnityEngine.Camera.main.ScreenPointToRay(Input.mousePosition);
                             RaycastHit hit;
+                            
+                            // play teleport out effect
+                            GameObject neweffect = Instantiate(TpOutEffect, clientsPlayer.transform.position, Quaternion.identity);
+                            Expirableffects.Add(new Tuple<GameObject, float>(neweffect, timeToDestroyExpirableEffect));
+                            Debug.Log("old pos: " +  clientsPlayer.transform.position.ToString());
+                            
                             MoveActorToMousePosition();
                             if (this.lastRotation.HasValue)
                                 Game.Avatar.MoveAbsolute(this.lastMovePosition.Value, (Vector)this.lastRotation);
@@ -254,16 +279,30 @@ public class RunBehaviour : MonoBehaviour, IGameListener
                                 Game.Avatar.MoveAbsolute(this.lastMovePosition.Value, Game.Avatar.Rotation);
 
                             wasTeleported = true;
+                            
+                            // play teleport in effect
+                            
+                            Vector3 newPos = new Vector3(lastMovePosition.Value.X, 0, lastMovePosition.Value.Y)*WorldToUnityFactor;
+                            Debug.Log("new pos: " + newPos.ToString());
+                            GameObject effect = Instantiate(TpInEffect, newPos, Quaternion.identity);
+                            effect.name = "TPin" + clientsPlayer.item.Id;
+                            Expirableffects.Add(new Tuple<GameObject, float>(effect, timeToDestroyExpirableEffect));;
                             break;
                         
                         case SpecialAbility.SpecialType.Burst:
                             Game.Avatar.ApplyBurst();
+                            GameObject burst = Instantiate(BurstPrefab, clientsPlayer.transform.position, 
+                                clientsPlayer.transform.rotation);
+                            burst.transform.localScale = new Vector3(2f,2f,2f);
                             break;
                         case SpecialAbility.SpecialType.Saber:
                             Game.Avatar.FireSaber();
                             break;
                         case SpecialAbility.SpecialType.Laser:
                             Game.Avatar.FireLaser();
+                            break;
+                        case SpecialAbility.SpecialType.Bomb:
+                            Game.Avatar.LaunchBomb(new Vector(clientsPlayer.transform.forward.x, clientsPlayer.transform.forward.z));
                             break;
                     }
                 }
@@ -322,14 +361,35 @@ public class RunBehaviour : MonoBehaviour, IGameListener
             
         } // if gameworld entered
 
-//        if (avatarVelocity.sqrMagnitude > 0.1f && !wasTeleported)
-//        {
-//            MoveRelative(new Vector(avatarVelocity.x, avatarVelocity.y) * elapsedSec);
-//        }
-
+        UpdateExpirableEffects(elapsedSec);
         
         lastTime = Time.time;
 
+    }
+
+    public void UpdateExpirableEffects(float elapsedSec)
+    {
+        foreach (var effect in Expirableffects)
+        {
+            if (effect.second < 0)
+            {
+                Destroy(effect.first);
+                Expirableffects.Remove(effect);
+                return;
+            }
+
+            effect.second -= elapsedSec;
+            
+            // if this is a teleport in effect sets it's position with the player who made it 
+            if (effect.first.name.StartsWith("TPin"))
+            {
+                string ownerId = effect.first.name.Substring(4);
+                if (actorTable.ContainsKey(ownerId))
+                {
+                    ((GameObject) effect.first).transform.position = actorTable[ownerId].transform.position;
+                }
+            }
+        }
     }
 
     public void OnApplicationQuit()
@@ -420,6 +480,17 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         
     }
 
+    private void CreateBomb(Item bombItem)
+    {
+        Debug.Log("making bombt");
+        GameObject newBomb = Instantiate(BombPrefab,
+            new Vector3(bombItem.Position.X, 0, bombItem.Position.Y) * WorldToUnityFactor, Quaternion.identity);
+        BombBehavior bb = newBomb.GetComponent<BombBehavior>();
+        if (bb == null)
+            bb = newBomb.AddComponent(typeof(BombBehavior)) as BombBehavior;
+        bb.Initialize(bombItem);
+    }
+
     #region IGameListener
 
     public void OnItemAdded(Item item)
@@ -434,6 +505,8 @@ public class RunBehaviour : MonoBehaviour, IGameListener
                 CreateBullet(item);
             else if (item.Id.StartsWith("bo"))
                 CreateBot(item);
+            else if (item.Id.StartsWith("zz"))
+                CreateBomb(item);
             else // create player
                 CreateActor(item);
         }
@@ -488,6 +561,13 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         string objName;
         if (item.Type == ItemType.Bullet)
             objName = item.Id;
+        else if (item.Type == ItemType.Bomb)
+        {
+            objName = item.Id;
+            GameObject bomb = GameObject.Find(objName);
+            bomb.GetComponent<BombBehavior>().Explode();
+            return;
+        }
         else 
             objName = this.ItemObjectName(item);
         GameObject obj = GameObject.Find(objName);
@@ -771,7 +851,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         if (currMP > 0 && Input.GetKey(KeyCode.LeftShift))
         {
             isMegaThrusting = true;
-            currMP -= mpCostPerSec* elapsedSec;
+            currMP -= thrustCostPerSec* elapsedSec;
         }
         else
         {
@@ -948,6 +1028,17 @@ public class RunBehaviour : MonoBehaviour, IGameListener
              actorTable[itemId].TakeDamage((hpChange));
         }
     }
+
+    public void OnBombSpawn(string itemId)
+    {
+       // Vector pos = actorTable[itemId].item.Position;
+        
+    }
+
+    public void OnBombExplode(string itemId, Vector pos)
+    {
+        
+    }
     
     // this feeds the radar with item positions
     public void OnRadarUpdate(string itemId, ItemType itemType, Vector position, bool remove)
@@ -977,6 +1068,9 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     {
         //bulletVelocity += avatarVelocity;    // add factor of velocity that comes from ship moved to server
 
+        if (currMP < bulletCost)
+            return;
+        currMP -= bulletCost;
         Operations.FireBullet(Game,new Vector(pos.x, pos.z)/ WorldToUnityFactor, 
             new Vector(fwX, fwZ), avatarVelocity.x, avatarVelocity.y, true);
     }

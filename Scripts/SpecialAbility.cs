@@ -12,7 +12,8 @@ public class SpecialAbility : MonoBehaviour
 		Teleport,
 		Burst,
 		Saber,
-		Laser
+		Laser,
+		Bomb
 	};
 	public float TimeToRecharge;
 	public KeyCode KeyMapping;

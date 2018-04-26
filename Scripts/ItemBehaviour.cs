@@ -38,7 +38,7 @@ public class ItemBehaviour : MonoBehaviour
     private float timeBetweenUpdates; // time for updates from server
 
     public float mlaserTimeLeft = 1f;
-    public float msaberTimeLeft = 4f;
+    public float msaberTimeLeft = 14f;
 
 
     public float laserTimeLeft = -1;
