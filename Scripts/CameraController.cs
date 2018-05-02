@@ -35,7 +35,7 @@ public class CameraController : MonoBehaviour {
 //		Vector3 lookatDir = Vector3.Normalize(playerShip.transform.forward + new Vector3(0, -height/maxHeight, 0));
 //		transform.rotation = Quaternion.LookRotation(lookatDir);
 
-		SetPlayerPos();
+		//SetPlayerPos();
 		
 		float mouseScroll = Input.GetAxis("Mouse ScrollWheel");
 		if (mouseScroll != 0)

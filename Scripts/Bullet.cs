@@ -18,6 +18,8 @@ public class Bullet : MonoBehaviour
 	private bool firstUpdate;
 	private float secondsTillUpdate = .05f; // based on how long server delays in sec to update bullet pos
 
+	public static int pbuffsize = 80;
+	private NStateBuffer nbuffer;
 	
 	// Use this for initialization
 	void Start () {
@@ -29,6 +31,8 @@ public class Bullet : MonoBehaviour
 		this.item = _item;
 		this.name = _item.Id;
 		firstUpdate = true;
+		nbuffer = new NStateBuffer(pbuffsize);
+		Show(false);
 	}
 	
 	// Update is called once per frame
@@ -57,15 +61,21 @@ public class Bullet : MonoBehaviour
 		{
 			this.lastMoveUpdate = newPos;
 			this.lastMoveUpdateTime = Time.time;
+			
+			nbuffer.AddNetworkState(newPos,lastMoveUpdateTime);
+			if (nbuffer.posSetCount > 2)
+				Show(true);
 		}
 		
-		if (newPos != transform.position)
-		{
-			// Debug.Log("move lerp: " + newPos);
-			// move smoothly
-			float lerpT = (Time.time - this.lastMoveUpdateTime)/secondsTillUpdate;
-			transform.position = Vector3.Lerp(transform.position, newPos, lerpT);
-		}
+		transform.position =  nbuffer.GetRewindedPos(Time.time - .1f);
+		
+//		if (newPos != transform.position)
+//		{
+//			// Debug.Log("move lerp: " + newPos);
+//			// move smoothly
+//			float lerpT = (Time.time - this.lastMoveUpdateTime)/secondsTillUpdate;
+//			transform.position = Vector3.Lerp(transform.position, newPos, lerpT);
+//		}
 
 
 
@@ -106,4 +116,20 @@ public class Bullet : MonoBehaviour
 			Destroy(this.gameObject);
 		}
 	}*/
+	
+	
+	private bool Show(bool show)
+	{
+		var renderers = GetComponentsInChildren<Renderer>();
+		if (renderers[0].enabled != show)
+		{
+			foreach (var render in renderers)
+			{
+				render.enabled = show;
+			}
+
+			return true;
+		}
+		return false;
+	}
 }

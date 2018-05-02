@@ -69,9 +69,7 @@ public class ItemBehaviour : MonoBehaviour
     private float timeSincePosChange = 0;
 
     public static int pbuffsize = 80;
-    private NetworkState[] posBuffer = new NetworkState[pbuffsize];
-    private int currBufferIndex = -1;
-    private int posSetCount = 0;
+    private NStateBuffer nbuffer;
     
 
     public void Destroy()
@@ -98,6 +96,7 @@ public class ItemBehaviour : MonoBehaviour
             
         ShowActor(false);
         lastTime = 0;
+        nbuffer = new NStateBuffer(pbuffsize);
     }
 
 
@@ -178,13 +177,12 @@ public class ItemBehaviour : MonoBehaviour
             this.lastMoveUpdate = newPos;
             this.lastMoveUpdateTime = Time.time;
             
-            NetworkState newstate = new NetworkState(newPos,Time.time);
-            AddNetworkState(newstate);
+            nbuffer.AddNetworkState(newPos,Time.time);
 
         }
 
         bool moveAbsolute = ShowActor(true);
-        transform.position =  GetRewindedPos(Time.time - .1f);
+        transform.position =  nbuffer.GetRewindedPos(Time.time - .1f);
         
         if (this.item.IsMine)
             playerCam.GetComponent<CameraController>().SetPlayerPos();
@@ -343,132 +341,4 @@ public class ItemBehaviour : MonoBehaviour
         currHealth -= amount;
     }
     
-
-        // get position, from buffer, that goes back to the timestamp totalms
-    public Vector3 GetRewindedPos(float totalms)
-    {
-        if (currBufferIndex < 0)
-        {
-            Debug.Log("warning no network states available");
-            return this.transform.position;;
-        }
-
-        if (posSetCount < 1)
-        {
-            Debug.Log("warning: rewind requested when buffer is empty");
-            return this.transform.position;
-        }
-        else if (posSetCount < 20)
-        {
-            Debug.Log("warning: rewind requested when buffer has few elements");
-            return posBuffer[currBufferIndex].pos;
-        }
-        else//generic case
-        {
-            // get the interval of the time between two buffer recordings to use as an estimate of all intervals
-            float lastTime = posBuffer[currBufferIndex].totalMs;
-            int indexOfTimeBeforeLast = currBufferIndex == 0 ? pbuffsize - 1 : currBufferIndex - 1;
-            double bufferIntervalEstimate = Math.Abs( lastTime - posBuffer[indexOfTimeBeforeLast].totalMs);
-            float timeDiff = lastTime - totalms;
-            int stepsBack = (int)Math.Floor(timeDiff / bufferIntervalEstimate); //estimated steps back in buffer
-            if (stepsBack > pbuffsize)
-            {
-                Debug.Log("error: rewind requested more than pbuffsize steps back, some one is lagged out?");
-                int indexOfOldest = (currBufferIndex + 1 - posSetCount);
-                if (indexOfOldest < 0)
-                    indexOfOldest = pbuffsize + indexOfOldest;
-            //   if (posBuffer[indexOfOldest].totalMs < totalms)
-            //        Debug.Log("requested time is greater than the oldest known time so we could have found lerped it");
-                
-                
-                if (totalms > posBuffer[currBufferIndex].totalMs)
-                    return posBuffer[currBufferIndex].pos;
-
-                int ansIndexRight = RewindHelperGetRightIndex(totalms, pbuffsize-3);
-                int ansIndexLeft = (ansIndexRight-1)% pbuffsize;
-                if (ansIndexLeft < 0)
-                    ansIndexLeft = pbuffsize + ansIndexLeft;
-                if (totalms <= posBuffer[ansIndexRight].totalMs && totalms > posBuffer[ansIndexLeft].totalMs)
-                {
-                    float tlerp = (float)((totalms - posBuffer[ansIndexLeft].totalMs) /
-                                          (posBuffer[ansIndexRight].totalMs - posBuffer[ansIndexLeft].totalMs));
-                    //return posBuffer[ansIndexRight].pos * tlerp + posBuffer[ansIndexLeft].pos * (1 - tlerp);
-                    return Vector3.Lerp(posBuffer[ansIndexLeft].pos, posBuffer[ansIndexRight].pos, tlerp);
-                }
-                else
-                {
-                    Debug.Log("ERROR rewind something went wrong");
-                    return posBuffer[ansIndexRight].pos;
-                }
-            }
-            else if (stepsBack > posSetCount) //stepping back more than we have buffer recordings
-            {
-                Debug.Log("warning: potentially rewinding back further than we have info for");
-                // start at the oldest position and if we need to move to newer positions until we have a match, do so
-                int ansBufferIndex = RewindHelperGetRightIndex(totalms, stepsBack+4);
-                return posBuffer[ansBufferIndex].pos;
-            }
-            else 
-            {
-                
-                if (totalms > posBuffer[currBufferIndex].totalMs)
-                    return posBuffer[currBufferIndex].pos;
-
-                int ansIndexRight = RewindHelperGetRightIndex(totalms, stepsBack+4);
-                int ansIndexLeft = (ansIndexRight-1)% pbuffsize;
-                if (ansIndexLeft < 0)
-                    ansIndexLeft = pbuffsize + ansIndexLeft;
-                if (totalms <= posBuffer[ansIndexRight].totalMs && totalms > posBuffer[ansIndexLeft].totalMs)
-                {
-                    float tlerp = (float)((totalms - posBuffer[ansIndexLeft].totalMs) /
-                        (posBuffer[ansIndexRight].totalMs - posBuffer[ansIndexLeft].totalMs));
-                    //return posBuffer[ansIndexRight].pos * tlerp + posBuffer[ansIndexLeft].pos * (1 - tlerp);
-                    return Vector3.Lerp(posBuffer[ansIndexLeft].pos, posBuffer[ansIndexRight].pos, tlerp);
-                }
-                else
-                {
-                    Debug.Log("ERROR rewind something went wrong");
-                    return posBuffer[ansIndexRight].pos;
-                }
-
-            }
-        }
-    }
-
-    private void AddNetworkState(NetworkState ns)
-    {
-        currBufferIndex++;
-        currBufferIndex = currBufferIndex % pbuffsize;
-        if (posSetCount < pbuffsize)
-            posSetCount++;
-        posBuffer[currBufferIndex] = ns;
-    }
-    
-    // to be optimized this should only be called if totalMS is smaller thant the largest timestamp in buffer
-    private int RewindHelperGetRightIndex(float totalMS, int stepsBack)
-    {
-        int ansBufferIndex = (currBufferIndex - Math.Min(posSetCount, stepsBack)) % pbuffsize;
-        if (ansBufferIndex < 0)
-            ansBufferIndex = pbuffsize + ansBufferIndex;
-        int ansIndexLeft;
-        float rightIndexTime;
-        int ansIndexRight;
-        do
-        {
-            ansBufferIndex++;
-            ansIndexRight = ansBufferIndex % pbuffsize;
-            rightIndexTime = posBuffer[ansIndexRight].totalMs;
-            ansIndexLeft = (ansBufferIndex-1)% pbuffsize;
-            if (ansIndexLeft < 0)
-                ansIndexLeft = pbuffsize + ansIndexLeft;
-            if (ansBufferIndex > pbuffsize*2)    //todo: remove if it doesnt happen
-            {
-                Debug.Log("error: rewind infinite loop situation");
-                return (currBufferIndex + 2)%pbuffsize;
-            }
-
-            if (rightIndexTime >= totalMS && posBuffer[ansIndexLeft].totalMs < totalMS)
-                return ansIndexRight;
-        } while (true);
-    }
 }
