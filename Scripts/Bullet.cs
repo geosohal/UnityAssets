@@ -16,7 +16,7 @@ public class Bullet : MonoBehaviour
 	private float lastMoveUpdateTime;
 	private Vector3 lastMoveUpdate;
 	private bool firstUpdate;
-	private float secondsTillUpdate = .012f; // based on how long server delays in sec to update bullet pos
+	private float secondsTillUpdate = .05f; // based on how long server delays in sec to update bullet pos
 
 	
 	// Use this for initialization

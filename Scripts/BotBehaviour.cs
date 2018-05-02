@@ -20,7 +20,7 @@ public class BotBehaviour : MonoBehaviour {
 
 		transform.position = new Vector3(this.item.Position.X, transform.position.y, this.item.Position.Y) *
 		                     RunBehaviour.WorldToUnityFactor;
-		timeBetweenUpdates = .012f;
+		timeBetweenUpdates = .05f;
 	}
 
 	// Use this for initialization

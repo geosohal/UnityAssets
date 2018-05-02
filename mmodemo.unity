@@ -212,7 +212,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerShip: {fileID: 154608, guid: 92a75daa6e836a14d83fb065fcf8097e, type: 2}
   smooth: 0
-  height: 80
+  height: 40
   zOffset: -5
   xOffset: -0.05
   minHeight: 20
@@ -294,7 +294,7 @@ MonoBehaviour:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 104}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 390397f02bff7644ab045efd81d0d720, type: 3}
   m_Name: 
@@ -891,6 +891,11 @@ CanvasRenderer:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 328754711}
+--- !u!4 &330052478 stripped
+Transform:
+  m_PrefabParentObject: {fileID: 4286386534920098, guid: 102f2ee8b491f0e44b554c453cc1628f,
+    type: 2}
+  m_PrefabInternal: {fileID: 990355194}
 --- !u!1 &514279002
 GameObject:
   m_ObjectHideFlags: 0
@@ -995,6 +1000,7 @@ Transform:
   - {fileID: 8203793}
   - {fileID: 103}
   - {fileID: 1559545256}
+  - {fileID: 330052478}
   m_Father: {fileID: 0}
   m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -1108,47 +1114,47 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c187ead86f9af5a48b38137522384415, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!1001 &1029738959
+--- !u!1001 &990355194
 Prefab:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
-    m_TransformParent: {fileID: 0}
+    m_TransformParent: {fileID: 583856799}
     m_Modifications:
-    - target: {fileID: 489332, guid: 80d02cbca64e045909954992d3eade5d, type: 2}
+    - target: {fileID: 4286386534920098, guid: 102f2ee8b491f0e44b554c453cc1628f, type: 2}
       propertyPath: m_LocalPosition.x
-      value: 0.33
+      value: 500
       objectReference: {fileID: 0}
-    - target: {fileID: 489332, guid: 80d02cbca64e045909954992d3eade5d, type: 2}
+    - target: {fileID: 4286386534920098, guid: 102f2ee8b491f0e44b554c453cc1628f, type: 2}
       propertyPath: m_LocalPosition.y
-      value: 5
+      value: -150
       objectReference: {fileID: 0}
-    - target: {fileID: 489332, guid: 80d02cbca64e045909954992d3eade5d, type: 2}
+    - target: {fileID: 4286386534920098, guid: 102f2ee8b491f0e44b554c453cc1628f, type: 2}
       propertyPath: m_LocalPosition.z
-      value: 1.91
+      value: 500
       objectReference: {fileID: 0}
-    - target: {fileID: 489332, guid: 80d02cbca64e045909954992d3eade5d, type: 2}
+    - target: {fileID: 4286386534920098, guid: 102f2ee8b491f0e44b554c453cc1628f, type: 2}
       propertyPath: m_LocalRotation.x
-      value: -0.7071068
+      value: 0.7071068
       objectReference: {fileID: 0}
-    - target: {fileID: 489332, guid: 80d02cbca64e045909954992d3eade5d, type: 2}
+    - target: {fileID: 4286386534920098, guid: 102f2ee8b491f0e44b554c453cc1628f, type: 2}
       propertyPath: m_LocalRotation.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 489332, guid: 80d02cbca64e045909954992d3eade5d, type: 2}
+    - target: {fileID: 4286386534920098, guid: 102f2ee8b491f0e44b554c453cc1628f, type: 2}
       propertyPath: m_LocalRotation.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 489332, guid: 80d02cbca64e045909954992d3eade5d, type: 2}
+    - target: {fileID: 4286386534920098, guid: 102f2ee8b491f0e44b554c453cc1628f, type: 2}
       propertyPath: m_LocalRotation.w
-      value: 0.7071067
+      value: 0.7071068
       objectReference: {fileID: 0}
-    - target: {fileID: 489332, guid: 80d02cbca64e045909954992d3eade5d, type: 2}
+    - target: {fileID: 4286386534920098, guid: 102f2ee8b491f0e44b554c453cc1628f, type: 2}
       propertyPath: m_RootOrder
-      value: 6
+      value: 3
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-  m_ParentPrefab: {fileID: 100100000, guid: 80d02cbca64e045909954992d3eade5d, type: 2}
+  m_ParentPrefab: {fileID: 100100000, guid: 102f2ee8b491f0e44b554c453cc1628f, type: 2}
   m_IsPrefabParent: 0
 --- !u!1 &1035461520
 GameObject:
@@ -2045,6 +2051,7 @@ MonoBehaviour:
   bombCost: 10
   bulletCost: 3
   shieldCost: 6
+  secTillUpdate: 0.025
 --- !u!4 &1533060146
 Transform:
   m_ObjectHideFlags: 0
@@ -2188,7 +2195,7 @@ MeshRenderer:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1559545255}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1

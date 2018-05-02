@@ -17,7 +17,7 @@ public class BombBehavior : MonoBehaviour
 	private bool firstUpdate;
 	private float lastMoveUpdateTime;
 	private Vector3 lastMoveUpdate;
-	private float secondsTillUpdate = .012f; // based on how long server delays in sec to update projectile pos
+	private float secondsTillUpdate = .05f; // based on how long server delays in sec to update projectile pos
 	
 	public void Initialize(Item _item)
 	{

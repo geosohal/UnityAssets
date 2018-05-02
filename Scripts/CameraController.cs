@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using Photon.MmoDemo.Common;
 using UnityEngine;
 
 public class CameraController : MonoBehaviour {
@@ -26,7 +27,7 @@ public class CameraController : MonoBehaviour {
 			playerShip = GameObject.FindWithTag("Player");
 		if (!playerShip)
 			return;
-		
+//		
 		Vector3 pos = new Vector3();
 		
 		pos.x = playerShip.transform.position.x + xOffset;
@@ -36,6 +37,12 @@ public class CameraController : MonoBehaviour {
 		transform.position = Vector3.SmoothDamp(transform.position, pos, ref velocity, smooth);
 		transform.rotation = Quaternion.LookRotation(playerShip.transform.position - transform.position);
 
+//		transform.position = pos;
+//
+//		Vector3 lookatDir = Vector3.Normalize(playerShip.transform.forward + new Vector3(0, -height/maxHeight, 0));
+//		transform.rotation = Quaternion.LookRotation(lookatDir);
+                                                                                      		
+		
 		float mouseScroll = Input.GetAxis("Mouse ScrollWheel");
 		if (mouseScroll != 0)
 		{

@@ -124,7 +124,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     public float shieldCost = 6f;
     
     private float timeToDestroyExpirableEffect = 8f;
-    public float secTillUpdate = .012f;
+    public float secTillUpdate = .05f;
 
     public Game Game
     {
@@ -698,9 +698,10 @@ public class RunBehaviour : MonoBehaviour, IGameListener
                 tile.transform.RotateAround(tile.transform.position, new Vector3(1, 0, 0), 90);
 
 
-                tile.transform.GetComponent<Renderer>().material = (x + y)%2 == 0
+                tile.transform.GetComponent<Renderer>().enabled = false; 
+                    /*= (x + y)%2 == 0
                     ? matDark
-                    : mat;
+                    : mat;*/
                 
                 tile.transform.parent = plane.transform;
                 tile.transform.localPosition = new Vector3(posX + (this.world.TileDimensions.Y/2f), 0f, posY + (this.world.TileDimensions.X/2f)) * WorldToUnityFactor;

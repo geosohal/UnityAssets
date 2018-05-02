@@ -13,6 +13,19 @@ using UnityEngine;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
+// a snapshot of values received over the network
+public struct NetworkState
+{
+    public Vector3 pos;
+    public float totalMs;
+    public NetworkState( Vector3 pos, float time )
+    {
+        this.pos = pos;
+        this.totalMs = time;
+    }
+}
+
+
 public class ItemBehaviour : MonoBehaviour
 {
     public Text actorText;
@@ -25,8 +38,11 @@ public class ItemBehaviour : MonoBehaviour
     private int currHealth;
 
     private float lastMoveUpdateTime;
+    private float lastlastMoveUpdateTime;
 
     private Vector3 lastMoveUpdate;
+    private Vector2 lastlastMoveUpdate;
+    
 
     public GameObject bulletSpawnObj;
     public GameObject bullet;
@@ -35,7 +51,7 @@ public class ItemBehaviour : MonoBehaviour
     public SimpleHealthBar healthBar;
     private float shipTilt;
     public float tiltDamper=.62f;
-    private float timeBetweenUpdates; // time for updates from server
+    private float timeBetweenUpdates =.05f; // time for updates from server
 
     public float mlaserTimeLeft = 1f;
     public float msaberTimeLeft = 9f;
@@ -47,6 +63,14 @@ public class ItemBehaviour : MonoBehaviour
     private Vector3 lastPos;
     private float displacement2LastFrame;	// displacement made this last frame
     private float displacement2Last2Frame;	// displacement made 2 frames ago
+
+    private float lastTime;
+    private float timeSincePosChange = 0;
+
+    public static int pbuffsize = 80;
+    private NetworkState[] posBuffer = new NetworkState[pbuffsize];
+    private int currBufferIndex = -1;
+    private int posSetCount = 0;
     
 
     public void Destroy()
@@ -59,15 +83,16 @@ public class ItemBehaviour : MonoBehaviour
     {
         this.item = actorItem;
         this.name = name;
-        timeBetweenUpdates = .012f;
         transform.position = new Vector3(this.item.Position.X, transform.position.y, this.item.Position.Y) *
                              RunBehaviour.WorldToUnityFactor;
         currHealth = maxHealth;
         healthBar = GameObject.FindWithTag("hpbar").GetComponent<SimpleHealthBar>();
         if (this.item.IsMine)
             GameObject.FindWithTag("MainCamera").GetComponent<CameraController>().playerShip = this.gameObject;
+    //        GameObject.FindWithTag("MainCamera").GetComponent<MSCameraController>().playerObject = this.gameObject;
+            
         ShowActor(false);
-        
+        lastTime = 0;
     }
 
 
@@ -81,6 +106,7 @@ public class ItemBehaviour : MonoBehaviour
             ShowActor(false);
             return;
         }
+        float elapsedSec = Time.time - lastTime;
 
         lastPos = transform.position;
         if (Math.Abs(shipTilt) > .25f)
@@ -126,7 +152,7 @@ public class ItemBehaviour : MonoBehaviour
             Vector3 shipForward = new Vector3(this.item.Rotation.X, 0, this.item.Rotation.Y);
             transform.rotation = Quaternion.LookRotation(shipForward.normalized, Vector3.up);
         }
-
+       // healthBar.UpdateBar(currHealth, maxHealth);
 
         // you could update the radar more often by using available info about items close-by:
         // this.radar.OnRadarUpdate(this.item.Id, this.item.Type, this.item.Position);
@@ -140,30 +166,37 @@ public class ItemBehaviour : MonoBehaviour
         Vector3 newPos = new Vector3(this.item.Position.X, transform.position.y, this.item.Position.Y) *
                          RunBehaviour.WorldToUnityFactor;
 
-
-
         if (newPos != this.lastMoveUpdate)
         {
             this.lastMoveUpdate = newPos;
             this.lastMoveUpdateTime = Time.time;
+            
+            NetworkState newstate = new NetworkState(newPos,Time.time);
+            AddNetworkState(newstate);
+
         }
 
-       // healthBar.UpdateBar(currHealth, maxHealth);
-
-        // move smoothly
-        float lerpT = (Time.time - this.lastMoveUpdateTime) / timeBetweenUpdates;
         bool moveAbsolute = ShowActor(true);
+        transform.position =  GetRewindedPos(Time.time - .1f);
 
-        if (moveAbsolute)
-        {
-            // Debug.Log("move absolute: " + newPos);
-            transform.position = newPos;
-        }
-        else if (newPos != transform.position)
-        {
-            // Debug.Log("move lerp: " + newPos);
-            transform.position = Vector3.Lerp(transform.position, newPos, lerpT);
-        }
+     
+//
+//        // move smoothly
+//        float lerpT = (Time.time - this.lastMoveUpdateTime) / timeBetweenUpdates;
+//        Debug.Log("lerpt " + lerpT.ToString() +" lmupt " + this.lastMoveUpdateTime.ToString() +
+//                  "tm " + Time.time.ToString());
+//        bool moveAbsolute = ShowActor(true);
+//        moveAbsolute = false;
+//        if (moveAbsolute)
+//        {
+//            // Debug.Log("move absolute: " + newPos);
+//            transform.position = newPos;
+//        }
+//        else if (newPos != transform.position)
+//        {
+//            // Debug.Log("move lerp: " + newPos);
+//            transform.position = Vector3.Lerp(transform.position, newPos, lerpT);
+//        }
 
         // view distance
         if (this.item.ViewDistanceEnter.X > 0 && this.item.ViewDistanceEnter.Y > 0)
@@ -214,6 +247,7 @@ public class ItemBehaviour : MonoBehaviour
         
         displacement2Last2Frame = displacement2LastFrame;
         displacement2LastFrame = (transform.position - lastPos).sqrMagnitude;
+        lastTime = Time.time;
     }
     
     
@@ -297,5 +331,134 @@ public class ItemBehaviour : MonoBehaviour
     public void TakeDamage(int amount)
     {
         currHealth -= amount;
+    }
+    
+
+        // get position, from buffer, that goes back to the timestamp totalms
+    public Vector3 GetRewindedPos(float totalms)
+    {
+        if (currBufferIndex < 0)
+        {
+            Debug.Log("warning no network states available");
+            return this.transform.position;;
+        }
+
+        if (posSetCount < 1)
+        {
+            Debug.Log("warning: rewind requested when buffer is empty");
+            return this.transform.position;
+        }
+        else if (posSetCount < 20)
+        {
+            Debug.Log("warning: rewind requested when buffer has few elements");
+            return posBuffer[currBufferIndex].pos;
+        }
+        else//generic case
+        {
+            // get the interval of the time between two buffer recordings to use as an estimate of all intervals
+            float lastTime = posBuffer[currBufferIndex].totalMs;
+            int indexOfTimeBeforeLast = currBufferIndex == 0 ? pbuffsize - 1 : currBufferIndex - 1;
+            double bufferIntervalEstimate = Math.Abs( lastTime - posBuffer[indexOfTimeBeforeLast].totalMs);
+            float timeDiff = lastTime - totalms;
+            int stepsBack = (int)Math.Floor(timeDiff / bufferIntervalEstimate); //estimated steps back in buffer
+            if (stepsBack > pbuffsize)
+            {
+                Debug.Log("error: rewind requested more than pbuffsize steps back, some one is lagged out?");
+                int indexOfOldest = (currBufferIndex + 1 - posSetCount);
+                if (indexOfOldest < 0)
+                    indexOfOldest = pbuffsize + indexOfOldest;
+            //   if (posBuffer[indexOfOldest].totalMs < totalms)
+            //        Debug.Log("requested time is greater than the oldest known time so we could have found lerped it");
+                
+                
+                if (totalms > posBuffer[currBufferIndex].totalMs)
+                    return posBuffer[currBufferIndex].pos;
+
+                int ansIndexRight = RewindHelperGetRightIndex(totalms, pbuffsize-3);
+                int ansIndexLeft = (ansIndexRight-1)% pbuffsize;
+                if (ansIndexLeft < 0)
+                    ansIndexLeft = pbuffsize + ansIndexLeft;
+                if (totalms <= posBuffer[ansIndexRight].totalMs && totalms > posBuffer[ansIndexLeft].totalMs)
+                {
+                    float tlerp = (float)((totalms - posBuffer[ansIndexLeft].totalMs) /
+                                          (posBuffer[ansIndexRight].totalMs - posBuffer[ansIndexLeft].totalMs));
+                    //return posBuffer[ansIndexRight].pos * tlerp + posBuffer[ansIndexLeft].pos * (1 - tlerp);
+                    return Vector3.Lerp(posBuffer[ansIndexLeft].pos, posBuffer[ansIndexRight].pos, tlerp);
+                }
+                else
+                {
+                    Debug.Log("ERROR rewind something went wrong");
+                    return posBuffer[ansIndexRight].pos;
+                }
+            }
+            else if (stepsBack > posSetCount) //stepping back more than we have buffer recordings
+            {
+                Debug.Log("warning: potentially rewinding back further than we have info for");
+                // start at the oldest position and if we need to move to newer positions until we have a match, do so
+                int ansBufferIndex = RewindHelperGetRightIndex(totalms, stepsBack+4);
+                return posBuffer[ansBufferIndex].pos;
+            }
+            else 
+            {
+                
+                if (totalms > posBuffer[currBufferIndex].totalMs)
+                    return posBuffer[currBufferIndex].pos;
+
+                int ansIndexRight = RewindHelperGetRightIndex(totalms, stepsBack+4);
+                int ansIndexLeft = (ansIndexRight-1)% pbuffsize;
+                if (ansIndexLeft < 0)
+                    ansIndexLeft = pbuffsize + ansIndexLeft;
+                if (totalms <= posBuffer[ansIndexRight].totalMs && totalms > posBuffer[ansIndexLeft].totalMs)
+                {
+                    float tlerp = (float)((totalms - posBuffer[ansIndexLeft].totalMs) /
+                        (posBuffer[ansIndexRight].totalMs - posBuffer[ansIndexLeft].totalMs));
+                    //return posBuffer[ansIndexRight].pos * tlerp + posBuffer[ansIndexLeft].pos * (1 - tlerp);
+                    return Vector3.Lerp(posBuffer[ansIndexLeft].pos, posBuffer[ansIndexRight].pos, tlerp);
+                }
+                else
+                {
+                    Debug.Log("ERROR rewind something went wrong");
+                    return posBuffer[ansIndexRight].pos;
+                }
+
+            }
+        }
+    }
+
+    private void AddNetworkState(NetworkState ns)
+    {
+        currBufferIndex++;
+        currBufferIndex = currBufferIndex % pbuffsize;
+        if (posSetCount < pbuffsize)
+            posSetCount++;
+        posBuffer[currBufferIndex] = ns;
+    }
+    
+    // to be optimized this should only be called if totalMS is smaller thant the largest timestamp in buffer
+    private int RewindHelperGetRightIndex(float totalMS, int stepsBack)
+    {
+        int ansBufferIndex = (currBufferIndex - Math.Min(posSetCount, stepsBack)) % pbuffsize;
+        if (ansBufferIndex < 0)
+            ansBufferIndex = pbuffsize + ansBufferIndex;
+        int ansIndexLeft;
+        float rightIndexTime;
+        int ansIndexRight;
+        do
+        {
+            ansBufferIndex++;
+            ansIndexRight = ansBufferIndex % pbuffsize;
+            rightIndexTime = posBuffer[ansIndexRight].totalMs;
+            ansIndexLeft = (ansBufferIndex-1)% pbuffsize;
+            if (ansIndexLeft < 0)
+                ansIndexLeft = pbuffsize + ansIndexLeft;
+            if (ansBufferIndex > pbuffsize*2)    //todo: remove if it doesnt happen
+            {
+                Debug.Log("error: rewind infinite loop situation");
+                return (currBufferIndex + 2)%pbuffsize;
+            }
+
+            if (rightIndexTime >= totalMS && posBuffer[ansIndexLeft].totalMs < totalMS)
+                return ansIndexRight;
+        } while (true);
     }
 }
