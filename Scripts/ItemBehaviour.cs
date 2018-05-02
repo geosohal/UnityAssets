@@ -31,6 +31,7 @@ public class ItemBehaviour : MonoBehaviour
     public Text actorText;
     public GameObject actorView;
     public GameObject actorViewExit;
+    public GameObject playerCam;
     public int maxHealth = 500;
 
 
@@ -88,8 +89,12 @@ public class ItemBehaviour : MonoBehaviour
         currHealth = maxHealth;
         healthBar = GameObject.FindWithTag("hpbar").GetComponent<SimpleHealthBar>();
         if (this.item.IsMine)
-            GameObject.FindWithTag("MainCamera").GetComponent<CameraController>().playerShip = this.gameObject;
-    //        GameObject.FindWithTag("MainCamera").GetComponent<MSCameraController>().playerObject = this.gameObject;
+        {
+            playerCam = GameObject.FindWithTag("MainCamera");
+            playerCam.GetComponent<CameraController>().playerShip = this.gameObject;
+            
+        }
+        //        GameObject.FindWithTag("MainCamera").GetComponent<MSCameraController>().playerObject = this.gameObject;
             
         ShowActor(false);
         lastTime = 0;
@@ -99,7 +104,7 @@ public class ItemBehaviour : MonoBehaviour
     /// <summary>
     /// Updates to item logic once per frame (called by Unity).
     /// </summary>
-    public void Update()
+    public void LateUpdate()
     {
         if (this.item == null || !this.item.IsUpToDate)
         {
@@ -146,6 +151,8 @@ public class ItemBehaviour : MonoBehaviour
                     timeSinceShot = 0;
                 }
             }
+            
+            
         }
         else if (this.item.IsMine == false) // set rotations of other ships using their item rotations
         {
@@ -178,6 +185,9 @@ public class ItemBehaviour : MonoBehaviour
 
         bool moveAbsolute = ShowActor(true);
         transform.position =  GetRewindedPos(Time.time - .1f);
+        
+        if (this.item.IsMine)
+            playerCam.GetComponent<CameraController>().SetPlayerPos();
 
      
 //

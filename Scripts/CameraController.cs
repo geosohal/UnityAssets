@@ -28,20 +28,14 @@ public class CameraController : MonoBehaviour {
 		if (!playerShip)
 			return;
 //		
-		Vector3 pos = new Vector3();
-		
-		pos.x = playerShip.transform.position.x + xOffset;
-		pos.y = playerShip.transform.position.y + height;
-		pos.z = playerShip.transform.position.z + zOffset;
 
-		transform.position = Vector3.SmoothDamp(transform.position, pos, ref velocity, smooth);
-		transform.rotation = Quaternion.LookRotation(playerShip.transform.position - transform.position);
 
 //		transform.position = pos;
 //
 //		Vector3 lookatDir = Vector3.Normalize(playerShip.transform.forward + new Vector3(0, -height/maxHeight, 0));
 //		transform.rotation = Quaternion.LookRotation(lookatDir);
-                                                                                      		
+
+		SetPlayerPos();
 		
 		float mouseScroll = Input.GetAxis("Mouse ScrollWheel");
 		if (mouseScroll != 0)
@@ -52,6 +46,18 @@ public class CameraController : MonoBehaviour {
 				height = newHeight+heightLeftOverVel;
 			heightLeftOverVel *= .85f;
 		}
+	}
+
+	public void SetPlayerPos()
+	{
+		Vector3 pos = new Vector3();
+		
+		pos.x = playerShip.transform.position.x + xOffset;
+		pos.y = playerShip.transform.position.y + height;
+		pos.z = playerShip.transform.position.z + zOffset;
+
+		transform.position = pos;//Vector3.SmoothDamp(transform.position, pos, ref velocity, smooth);
+		transform.rotation = Quaternion.LookRotation(playerShip.transform.position - transform.position);
 	}
 	
 
