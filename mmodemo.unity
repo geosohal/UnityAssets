@@ -213,11 +213,15 @@ MonoBehaviour:
   playerShip: {fileID: 154608, guid: 92a75daa6e836a14d83fb065fcf8097e, type: 2}
   smooth: 0
   height: 40
-  zOffset: -5
+  zOffset: -25
   xOffset: -0.05
   minHeight: 20
   maxHeight: 250
   zoomSpeed: 120
+  lookAheadAmount: 20
+  backFromPlayer: 20
+  isThirdPerson: 0
+  isSemiThirdPerson: 0
 --- !u!81 &106
 AudioListener:
   m_ObjectHideFlags: 0
@@ -829,7 +833,7 @@ GameObject:
   - component: {fileID: 328754713}
   m_Layer: 2
   m_Name: HudText
-  m_TagString: Untagged
+  m_TagString: Hud
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1997,6 +2001,7 @@ GameObject:
   - component: {fileID: 1533060145}
   - component: {fileID: 1533060147}
   - component: {fileID: 1533060148}
+  - component: {fileID: 1533060149}
   m_Layer: 0
   m_Name: Scripts
   m_TagString: GameController
@@ -2027,6 +2032,8 @@ MonoBehaviour:
   TpOutEffect: {fileID: 196988, guid: 2dc0791df667f4f4586152f049c46254, type: 2}
   TpInEffect: {fileID: 145588, guid: a82c78eebe327ca42b37f892837dbe21, type: 2}
   HpBox: {fileID: 1843250739121098, guid: d6a93dd26770bc341869358fa358fbd1, type: 2}
+  MotherMobPrefab: {fileID: 1751531680320082, guid: 7ff9dcc1823a29a4684529b98058513b,
+    type: 2}
   mpBar: {fileID: 0}
   MaxUnityUnitsForWorld: 1000
   WorldNameText: {fileID: 1333589538}
@@ -2041,6 +2048,12 @@ MonoBehaviour:
   megaMaxVelFactor: 3
   maxVelSq: 32400
   MegaThrustFadePerSec: 50
+  clientsPlayer: {fileID: 0}
+  longLaserSound: {fileID: 8300000, guid: 9b3a6dfe377e0064fb3d49b1b4b3af28, type: 3}
+  teleportSound: {fileID: 8300000, guid: 06f5abb8109430b4088f480b318f061b, type: 3}
+  burstSound: {fileID: 8300000, guid: ac3adf3ca6b1a3341a9cc1fa0f2051e1, type: 3}
+  saberSound: {fileID: 8300000, guid: d24c26066e693c349808746a4ae383cb, type: 3}
+  thrustSound: {fileID: 0}
   maxMP: 200
   MPpersec: 3
   thrustCostPerSec: 4
@@ -2158,6 +2171,86 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   UiRttItem: {fileID: 2023531345}
+--- !u!82 &1533060149
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1533060144}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 8300000, guid: 66be27c6618556442896457db066c94b, type: 3}
+  m_PlayOnAwake: 0
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 1
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 2
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+    - serializedVersion: 2
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 2
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 0
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 2
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 2
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 0
 --- !u!1 &1559545255
 GameObject:
   m_ObjectHideFlags: 0

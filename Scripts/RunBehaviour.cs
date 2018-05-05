@@ -51,6 +51,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     public GameObject TpOutEffect;
     public GameObject TpInEffect;
     public GameObject HpBox;
+    public GameObject MotherMobPrefab;
     public SimpleHealthBar mpBar;
 
     public List<Tuple<GameObject,float>> Expirableffects;
@@ -81,6 +82,14 @@ public class RunBehaviour : MonoBehaviour, IGameListener
 
     public float maxVelSq;
     public float MegaThrustFadePerSec; // amount to decrease max thrust per second, value of 1 decreases it by 1 per/sec
+    public ItemBehaviour clientsPlayer;    // itembehaviour belonging to the client who runs this code
+
+    public AudioClip longLaserSound;
+    public AudioClip teleportSound;
+    public AudioClip burstSound;
+    public AudioClip saberSound;
+    public AudioClip thrustSound;
+    
     private float lastKeyPress;
     private Vector? lastMovePosition;
     private Vector? lastRotation;
@@ -89,7 +98,6 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     private float nextMoveTime;
     private float nextRotTime;
     private GameObject actorGo;
-    private ItemBehaviour clientsPlayer;    // itembehaviour belonging to the client who runs this code
     private Dictionary<string, ItemBehaviour> actorTable;
     private float lastTime;
     
@@ -125,6 +133,8 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     
     private float timeToDestroyExpirableEffect = 8f;
     public float secTillUpdate = .05f;
+
+    private AudioSource audioSource;
 
     public Game Game
     {
@@ -174,6 +184,8 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         isMegaThrusting = false;
         Expirableffects = new List<Tuple<GameObject, float>>();
         currMP = maxMP;
+
+        audioSource = GetComponent<AudioSource>();
     }
 
     public void Start()
@@ -389,6 +401,8 @@ public class RunBehaviour : MonoBehaviour, IGameListener
                         * WorldToUnityFactor;
                     GameObject effect = Instantiate(TpInEffect, nextPos, Quaternion.identity);
                     Expirableffects.Add(new Tuple<GameObject, float>(effect, timeToDestroyExpirableEffect));;
+                    
+                    audioSource.PlayOneShot(teleportSound, 1f);
                 }
             }
         }
@@ -504,7 +518,18 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         bb.Initialize(this.Game, bot, this.ItemObjectName(bot), null);
         
         Debug.Log("made bot on client");
+    }
+    
+    private void CreateMotherMob(Item bot)
+    {
+        GameObject newbot = Instantiate(MotherMobPrefab, new Vector3(bot.Position.X, 0, bot.Position.Y) * WorldToUnityFactor,
+            Quaternion.identity);
+        BotBehaviour bb = newbot.GetComponent<BotBehaviour>();
+        if (bb == null)
+            bb = newbot.AddComponent(typeof (BotBehaviour)) as BotBehaviour;
+        bb.Initialize(this.Game, bot, this.ItemObjectName(bot), null);
         
+        Debug.Log("made mother bot on client");
     }
 
     private void CreateBomb(Item bombItem)
@@ -540,6 +565,8 @@ public class RunBehaviour : MonoBehaviour, IGameListener
                 CreateBullet(item);
             else if (item.Id.StartsWith("bo"))
                 CreateBot(item);
+            else if (item.Id.StartsWith("mb"))
+                CreateMotherMob(item);
             else if (item.Id.StartsWith("zz"))
                 CreateBomb(item);
             else if (item.Id.StartsWith("hp"))
@@ -953,20 +980,61 @@ public class RunBehaviour : MonoBehaviour, IGameListener
                 ParticleSystem[] psystems = clientsPlayer.GetComponentsInChildren<ParticleSystem>();
                 foreach (ParticleSystem ps in psystems)
                 {
-                    ps.Emit(1);
-                    ps.transform.rotation = clientsPlayer.transform.rotation * Quaternion.AngleAxis(180, Vector3.up);
+                    if (ps.gameObject.CompareTag("engineThrust"))
+                    {
+                        ps.transform.rotation =
+                            clientsPlayer.transform.rotation * Quaternion.AngleAxis(180, Vector3.up);
+                        if (isMegaThrusting)
+                        {
+                            ps.startColor = new Color(.2f,.4f,1,1);
+                            ps.Emit(3);
+                        }
+                        else
+                        {
+                            ps.startColor = Color.yellow;
+                            ps.Emit(1);
+                        }
+
+                    }
+                    if (isMegaThrusting && ps.gameObject.CompareTag("megaThrust"))
+                    {
+                     //   ps.Emit(1);
+                //        ps.transform.rotation =
+                 //           clientsPlayer.transform.rotation * Quaternion.AngleAxis(-90, Vector3.forward);
+                    }
                 }
 
             }
             else if (Input.GetKey(KeyCode.S))
             {
+             //  audioSource.
                 avatarVelocity -= new Vector2(lastRotStored.X, lastRotStored.Y) * ThrustForce * currMegaThrust;
                 
                 ParticleSystem[] psystems = clientsPlayer.GetComponentsInChildren<ParticleSystem>();
                 foreach (ParticleSystem ps in psystems)
                 {
-                    ps.Emit(1);
-                    ps.transform.rotation = clientsPlayer.transform.rotation;
+                    if (ps.gameObject.CompareTag("engineThrust"))
+                    {
+                        
+                        ps.transform.rotation = clientsPlayer.transform.rotation;
+                        if (isMegaThrusting)
+                        {
+                            ps.startColor = new Color(.2f,.4f,1,1);
+                            ps.Emit(3);
+                        }
+                        else
+                        {
+                            ps.startColor = Color.yellow;
+                            ps.Emit(1);
+                        }
+                    }
+
+                    if (isMegaThrusting && ps.gameObject.CompareTag("megaThrust"))
+                    {
+                    //    ps.Emit(1);
+                  //      ps.transform.rotation =
+                   //         clientsPlayer.transform.rotation * Quaternion.AngleAxis(90, Vector3.forward);
+                    }
                 }
             }
 
@@ -1024,7 +1092,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     public void OnLaserFired(ItemBehaviour ib)
     {
         Debug.Log("Laser Fired operation received for " + ib.item.Id);
-
+        audioSource.PlayOneShot(longLaserSound, 1f);
         if (ib != null)
         {
             ib.laserTimeLeft = ib.mlaserTimeLeft;
@@ -1048,6 +1116,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         
         if (ib != null)
         {
+            audioSource.PlayOneShot(saberSound,1f);
             ib.saberTimeLeft = ib.msaberTimeLeft;
             Debug.Log("saber adv");
             MeshRenderer[] mrs = ib.GetComponentsInChildren<MeshRenderer>();
@@ -1076,6 +1145,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
 
     public void OnBurst(Vector pos)
     {
+        audioSource.PlayOneShot(burstSound, .5f);
         Debug.Log("burst at " + pos.ToString());
         GameObject burst = Instantiate(BurstPrefab, new Vector3(pos.X,0,pos.Y) * WorldToUnityFactor, Quaternion.identity);
         burst.transform.localScale = new Vector3(2f,2f,2f);

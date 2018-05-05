@@ -1,0 +1,27 @@
+# Babylon 5 -  Soul Hunter
+
+"Soul Hunter Scout" "Eps Eri/Epsilon Eridani 3"
+{
+	
+	Class "spacecraft"
+	Mesh "SoulHunter.3DS"
+	Radius 0.013
+	
+	EllipticalOrbit {
+		Period          0.06 
+		SemiMajorAxis   20007#19998
+		Eccentricity    0.0016886
+		Inclination     1 
+		AscendingNode   143.1518
+		ArgOfPericenter 346.23
+		MeanAnomaly      13.8216
+		Epoch           2452028.18381755
+	}
+
+	Obliquity 1  	      
+	RotationOffset -98  	      
+	EquatorAscendingNode  143.1518
+	Albedo        0.10
+	InfoURL "extras/Babylon 5/Info/info_soulhunter.html"
+}
+

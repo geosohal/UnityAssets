@@ -3,18 +3,18 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 
-//// a snapshot of values received over the network
-//public struct NetworkState
-//{
-//    public Vector3 pos;
-//    public float totalMs;
-//    public NetworkState( Vector3 pos, float time )
-//    {
-//        this.pos = pos;
-//        this.totalMs = time;
-//    }
-//}
-//
+// a snapshot of values received over the network
+public struct NetworkState
+{
+    public Vector3 pos;
+    public float totalMs;
+    public NetworkState( Vector3 pos, float time )
+    {
+        this.pos = pos;
+        this.totalMs = time;
+    }
+}
+
 
 public class NStateBuffer
 {
@@ -51,7 +51,7 @@ public class NStateBuffer
 
         if (posSetCount <= 3)
         {
-            Debug.Log("warning: rewind requested when buffer is near empty");
+            //Debug.Log("warning: rewind requested when buffer is near empty");
             return posBuffer[currBufferIndex].pos;
         }
 //        else if (posSetCount == 1)

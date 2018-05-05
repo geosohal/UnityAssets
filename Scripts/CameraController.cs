@@ -14,11 +14,16 @@ public class CameraController : MonoBehaviour {
 	public float minHeight = 6f;
 	public float maxHeight = 60f;
 	public float zoomSpeed = 40f;
+	public float lookAheadAmount;
+
+	public float backFromPlayer;
 
 	private Vector3 velocity = Vector3.zero;
-	private float heightLeftOverVel = 0; 
+	private float heightLeftOverVel = 0;
 
 
+	public bool isThirdPerson;
+	public bool isSemiThirdPerson;
 
 	// methods
 	void Update()
@@ -52,12 +57,35 @@ public class CameraController : MonoBehaviour {
 	{
 		Vector3 pos = new Vector3();
 		
-		pos.x = playerShip.transform.position.x + xOffset;
-		pos.y = playerShip.transform.position.y + height;
-		pos.z = playerShip.transform.position.z + zOffset;
+	//	pos.x = playerShip.transform.position.x + xOffset;
+		Vector3 ourLookAtPos;
+		
+		if (isThirdPerson)
+		{
+			pos = playerShip.transform.position + playerShip.transform.forward * -1f * backFromPlayer;
 
-		transform.position = pos;//Vector3.SmoothDamp(transform.position, pos, ref velocity, smooth);
-		transform.rotation = Quaternion.LookRotation(playerShip.transform.position - transform.position);
+			pos.y = playerShip.transform.position.y + height;
+			ourLookAtPos  = playerShip.transform.position + playerShip.transform.forward * lookAheadAmount;
+			transform.position = pos;//Vector3.SmoothDamp(transform.position, pos, ref velocity, smooth);
+			transform.rotation = Quaternion.LookRotation(ourLookAtPos - transform.position);
+		}
+		else
+		{
+			pos.x = playerShip.transform.position.x + xOffset;
+			pos.y = playerShip.transform.position.y + height;
+			pos.z = playerShip.transform.position.z + zOffset;
+
+			transform.position = pos;//Vector3.SmoothDamp(transform.position, pos, ref velocity, smooth);
+			if (isSemiThirdPerson)
+				ourLookAtPos = playerShip.transform.position + playerShip.transform.forward * lookAheadAmount;
+			else
+				ourLookAtPos = playerShip.transform.position;
+			transform.rotation = Quaternion.LookRotation(ourLookAtPos - transform.position);
+		}
+
+		
+		
+		
 	}
 	
 

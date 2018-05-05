@@ -14,16 +14,16 @@ using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
 // a snapshot of values received over the network
-public struct NetworkState
-{
-    public Vector3 pos;
-    public float totalMs;
-    public NetworkState( Vector3 pos, float time )
-    {
-        this.pos = pos;
-        this.totalMs = time;
-    }
-}
+//public struct NetworkState
+//{
+//    public Vector3 pos;
+//    public float totalMs;
+//    public NetworkState( Vector3 pos, float time )
+//    {
+//        this.pos = pos;
+//        this.totalMs = time;
+//    }
+//}
 
 
 public class ItemBehaviour : MonoBehaviour
@@ -54,8 +54,8 @@ public class ItemBehaviour : MonoBehaviour
     public float tiltDamper=.62f;
     private float timeBetweenUpdates =.05f; // time for updates from server
 
-    public float mlaserTimeLeft = 1f;
-    public float msaberTimeLeft = 9f;
+    public float mlaserTimeLeft = 2.1f;
+    public float msaberTimeLeft = 10f;
 
 
     public float laserTimeLeft = -1;
@@ -70,6 +70,10 @@ public class ItemBehaviour : MonoBehaviour
 
     public static int pbuffsize = 80;
     private NStateBuffer nbuffer;
+    private float velocityChangeAllowance2 = .005f;
+
+    public bool isThirdPerson;
+    private GameObject hudObj;
     
 
     public void Destroy()
@@ -97,6 +101,7 @@ public class ItemBehaviour : MonoBehaviour
         ShowActor(false);
         lastTime = 0;
         nbuffer = new NStateBuffer(pbuffsize);
+        hudObj = GameObject.FindGameObjectWithTag("Hud");
     }
 
 
@@ -129,11 +134,33 @@ public class ItemBehaviour : MonoBehaviour
                 targetPoint.y = transform.position.y;
                 Vector3 newForward = targetPoint - transform.position;
                 newForward = newForward.normalized;
-                SetRotation(newForward); // set Item's rotation so other players can get update
+                
                 float deltaAngle = -Vector3.SignedAngle(transform.forward, newForward, Vector3.up);
+                hudObj.GetComponent<Text>().text =deltaAngle.ToString();
+                
+
+                if (isThirdPerson)
+                {
+                    if (deltaAngle > 20f || deltaAngle < -20f)// change ship angle only if mouse is out of center line
+                    {
+                        newForward = Vector3.Lerp(transform.forward, newForward, (Math.Abs(deltaAngle) - 20f) / 350f);
+                        hudObj.GetComponent<Text>().text =deltaAngle.ToString() + "r";
+                    }
+                    else
+                    {
+                        newForward = Vector3.Lerp(transform.forward, newForward, Math.Abs(deltaAngle) / 1350f);
+                        
+                    }
+                    deltaAngle *= .1f;
+                }
+                
                 if (Math.Abs(shipTilt + deltaAngle) < 40f)
                     shipTilt += deltaAngle;
-                transform.rotation = Quaternion.LookRotation(newForward, Vector3.up) * Quaternion.AngleAxis(shipTilt, Vector3.forward);
+                
+                transform.rotation = Quaternion.LookRotation(newForward, Vector3.up) *
+                                     Quaternion.AngleAxis(shipTilt, Vector3.forward);
+                SetRotation(newForward); // set Item's rotation so other players can get update
+                
             }
 
             // update timer for measuring time since last shot
@@ -153,12 +180,46 @@ public class ItemBehaviour : MonoBehaviour
             
             
         }
-        else if (this.item.IsMine == false) // set rotations of other ships using their item rotations
+        else if (this.item.IsMine == false) 
         {
+            // set rotations of other ships using their item rotations
             Vector3 shipForward = new Vector3(this.item.Rotation.X, 0, this.item.Rotation.Y);
             transform.rotation = Quaternion.LookRotation(shipForward.normalized, Vector3.up);
+            
+            // detect if other ship is using thrusters by if their velocity changed
+            if (this.SeemsToBeThrusting())
+            {
+                ParticleSystem[] psystems = GetComponentsInChildren<ParticleSystem>();
+                foreach (ParticleSystem ps in psystems)
+                {
+                    if (ps.gameObject.CompareTag("engineThrust"))
+                    {
+                        ps.transform.rotation =
+                            transform.rotation * Quaternion.AngleAxis(180, Vector3.up);
+//                        if (isMegaThrusting)
+//                        {
+//                            ps.startColor = new Color(.2f,.4f,1,1);
+//                            ps.Emit(3);
+//                        }
+//                        else
+                        {
+                            ps.startColor = Color.yellow;
+                            ps.Emit(1);
+                        }
+
+                    }
+                    //  if (isMegaThrusting && ps.gameObject.CompareTag("megaThrust"))
+                    {
+                        //   ps.Emit(1);
+                        //        ps.transform.rotation =
+                        //           clientsPlayer.transform.rotation * Quaternion.AngleAxis(-90, Vector3.forward);
+                    }
+                }
+            }
+
         }
        // healthBar.UpdateBar(currHealth, maxHealth);
+            
 
         // you could update the radar more often by using available info about items close-by:
         // this.radar.OnRadarUpdate(this.item.Id, this.item.Type, this.item.Position);
@@ -257,6 +318,13 @@ public class ItemBehaviour : MonoBehaviour
         displacement2LastFrame = (transform.position - lastPos).sqrMagnitude;
         lastTime = Time.time;
     }
+    // detect if other ship is using thrusters by if their velocity changed by a significant enough amount
+    private bool SeemsToBeThrusting()
+    {
+        if (displacement2Last2Frame - displacement2LastFrame > velocityChangeAllowance2)
+            return true;
+        return false;
+    }
     
     
     public bool SeemsToBeTeleporting()
@@ -334,11 +402,28 @@ public class ItemBehaviour : MonoBehaviour
     {
         currHealth -= amount;
         healthBar.UpdateBar(currHealth, maxHealth);
+        FlySparks();
+
     }
+
 
     public void TakeDamage(int amount)
     {
         currHealth -= amount;
+        FlySparks();
     }
     
+    private void FlySparks()
+    {
+        ParticleSystem[] psystems = GetComponentsInChildren<ParticleSystem>();
+        foreach (ParticleSystem ps in psystems)
+        {
+            if (ps.gameObject.CompareTag("damageSpark") && !ps.isPlaying)
+            {
+                ps.Play();
+                return;
+            }
+        }
+    }
+
 }

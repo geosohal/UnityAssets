@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using Photon.MmoDemo.Client;
 using UnityEngine;
@@ -18,12 +19,16 @@ public class BombBehavior : MonoBehaviour
 	private float lastMoveUpdateTime;
 	private Vector3 lastMoveUpdate;
 	private float secondsTillUpdate = .05f; // based on how long server delays in sec to update projectile pos
+	private AudioSource source;
+
+	public AudioClip explodeSound;
 	
 	public void Initialize(Item _item)
 	{
 		this.item = _item;
 		this.name = _item.Id;
 		firstUpdate = true;
+		source = GetComponent<AudioSource>();
 	}
 	
 	// Use this for initialization
@@ -45,6 +50,14 @@ public class BombBehavior : MonoBehaviour
 			particleSystem.Play();
 		}
 
+		float distToClientPlayer2 = (this.transform.position -
+		                             ((RunBehaviour) GameObject.FindWithTag("GameController").GetComponent<RunBehaviour>())
+		                             .clientsPlayer.transform
+		                             .position).sqrMagnitude;
+
+		float volume = Mathf.Lerp(1, 0, distToClientPlayer2 / 10000f);
+		
+		source.PlayOneShot(explodeSound, volume);
 		exploded = true;
 	}
 	// Update is called once per frame

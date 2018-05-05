@@ -1,0 +1,154 @@
+fileFormatVersion: 2
+guid: 2669bca73ab50444bada4fdf168b506a
+timeCreated: 1525452748
+licenseType: Free
+ModelImporter:
+  serializedVersion: 22
+  fileIDToRecycleName:
+    100000: bone_MOB_TURTLE_CenterMass
+    100002: bone_MOB_TURTLE_Cylinoid
+    100004: bone_MOB_TURTLE_Fan_Root
+    100006: bone_MOB_TURTLE_FanA
+    100008: bone_MOB_TURTLE_FanB
+    100010: bone_MOB_TURTLE_FanC
+    100012: bone_MOB_TURTLE_FanD
+    100014: bone_MOB_TURTLE_FanE
+    100016: bone_MOB_TURTLE_FanF
+    100018: bone_MOB_TURTLE_FanG
+    100020: bone_MOB_TURTLE_FanH
+    100022: bone_MOB_TURTLE_Root
+    100024: //RootNode
+    100026: node_core00
+    100028: node_core01
+    100030: node_core02
+    100032: node_core03
+    100034: node_FX_damage00
+    100036: node_FX_damage01
+    100038: node_FX_damage02
+    100040: node_FX_root
+    100042: node_FX_tractorbeam
+    100044: node_FX_weaponL
+    100046: node_FX_weaponR
+    100048: Root
+    100050: Scene_Root
+    100052: Sphere
+    100054: Sphere 1
+    100056: Turtle_LOD
+    100058: Turtle_LOD 1
+    400000: bone_MOB_TURTLE_CenterMass
+    400002: bone_MOB_TURTLE_Cylinoid
+    400004: bone_MOB_TURTLE_Fan_Root
+    400006: bone_MOB_TURTLE_FanA
+    400008: bone_MOB_TURTLE_FanB
+    400010: bone_MOB_TURTLE_FanC
+    400012: bone_MOB_TURTLE_FanD
+    400014: bone_MOB_TURTLE_FanE
+    400016: bone_MOB_TURTLE_FanF
+    400018: bone_MOB_TURTLE_FanG
+    400020: bone_MOB_TURTLE_FanH
+    400022: bone_MOB_TURTLE_Root
+    400024: //RootNode
+    400026: node_core00
+    400028: node_core01
+    400030: node_core02
+    400032: node_core03
+    400034: node_FX_damage00
+    400036: node_FX_damage01
+    400038: node_FX_damage02
+    400040: node_FX_root
+    400042: node_FX_tractorbeam
+    400044: node_FX_weaponL
+    400046: node_FX_weaponR
+    400048: Root
+    400050: Scene_Root
+    400052: Sphere
+    400054: Sphere 1
+    400056: Turtle_LOD
+    400058: Turtle_LOD 1
+    2100000: MOB_TURTLE_3
+    2100002: mesh100material
+    4300000: Turtle_LOD
+    4300002: Sphere
+    9500000: //RootNode
+    13700000: Sphere
+    13700002: Turtle_LOD
+  externalObjects: {}
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    rigImportErrors: 
+    rigImportWarnings: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    preserveHierarchy: 0
+    indexFormat: 0
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    serializedVersion: 2
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    rootMotionBoneName: 
+    rootMotionBoneRotation: {x: 0, y: 0, z: 0, w: 1}
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 2
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
