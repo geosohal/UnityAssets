@@ -14,7 +14,8 @@ public class SpecialAbility : MonoBehaviour
 		Saber,
 		Laser,
 		Bomb,
-		Shield
+		Shield,
+		BallMode
 	};
 	public float TimeToRecharge;
 	public KeyCode KeyMapping;

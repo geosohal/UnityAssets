@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Photon.MmoDemo.Client;
 using UnityEngine;
 using UnityEngine.UI;
@@ -11,16 +12,21 @@ public class BotBehaviour : MonoBehaviour {
 	protected float lastMoveUpdateTime;
 	protected Vector3 lastMoveUpdate;
 	private float timeBetweenUpdates; // time for updates from server
+	private int maxHealth = 30;
+	private int currHealth;
+	public SimpleHealthBar healthBar;
+	private bool isMother;
 
 
-	public void Initialize(Game mmoGame, Item botItem, string name, Radar worldRadar)
+	public void Initialize(Game mmoGame, Item botItem, string name, Radar worldRadar, bool isMother)
 	{
 		this.item = botItem;
 		this.name = name;
-
+		this.isMother = isMother;
 		transform.position = new Vector3(this.item.Position.X, transform.position.y, this.item.Position.Y) *
 		                     RunBehaviour.WorldToUnityFactor;
 		timeBetweenUpdates = .05f;
+		currHealth = maxHealth;
 	}
 
 	// Use this for initialization
@@ -50,6 +56,45 @@ public class BotBehaviour : MonoBehaviour {
 		{
 			// Debug.Log("move lerp: " + newPos);
 			transform.position = Vector3.Lerp(transform.position, newPos, lerpT);
+		}
+	}
+	
+	public void TakeDamage(int amount)
+	{
+		//Debug.Log(("bot taking dmg " + amount.ToString()));
+		currHealth -= amount;
+		healthBar.UpdateBar(currHealth, maxHealth);
+		FlySparks();
+	}
+	
+	private void FlySparks()
+	{
+		ParticleSystem[] psystems = GetComponentsInChildren<ParticleSystem>();
+		foreach (ParticleSystem ps in psystems)
+		{
+			if (ps.gameObject.CompareTag("damageSpark") && !ps.isPlaying)
+			{
+				ps.Play();
+				return;
+			}
+		}
+	}
+
+	public void DeathAnimation(List<Tuple<GameObject,float>> expirables)
+	{
+		ParticleSystem[] psystems = GetComponentsInChildren<ParticleSystem>();
+		foreach (ParticleSystem ps in psystems)
+		{
+			if (ps.gameObject.CompareTag("damageSpark"))
+			{
+				GameObject newObj = new GameObject();
+				ParticleSystem copyps = newObj.AddComponent<ParticleSystem>();
+				copyps.Stop();
+				HelperUtility.GetCopyOf(copyps, ps);
+				copyps.Play();
+				expirables.Add( new Tuple<GameObject,float>(newObj, 5f) ) ;
+				return;
+			}
 		}
 	}
 }

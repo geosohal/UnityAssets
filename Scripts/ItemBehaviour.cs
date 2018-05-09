@@ -10,6 +10,7 @@
 using System;
 using Photon.MmoDemo.Client;
 using UnityEngine;
+using UnityEngine.Assertions.Must;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
@@ -74,6 +75,11 @@ public class ItemBehaviour : MonoBehaviour
 
     public bool isThirdPerson;
     private GameObject hudObj;
+
+    public bool isSuperFast;
+
+    private MeshRenderer wireBall;
+    private bool firstUpdate;
     
 
     public void Destroy()
@@ -84,6 +90,7 @@ public class ItemBehaviour : MonoBehaviour
 
     public void Initialize(Game mmoGame, Item actorItem, string name, Radar worldRadar)
     {
+        isSuperFast = false;
         this.item = actorItem;
         this.name = name;
         transform.position = new Vector3(this.item.Position.X, transform.position.y, this.item.Position.Y) *
@@ -102,6 +109,31 @@ public class ItemBehaviour : MonoBehaviour
         lastTime = 0;
         nbuffer = new NStateBuffer(pbuffsize);
         hudObj = GameObject.FindGameObjectWithTag("Hud");
+        firstUpdate = true;
+        // turn off mesh render for wireball
+        MeshRenderer[] mrs = GetComponentsInChildren<MeshRenderer>();
+        foreach (var mr in mrs)
+        {
+            if (mr.gameObject.tag == "wireball")
+            {
+                wireBall = mr;
+                wireBall.enabled = false;
+                Debug.Log("wireball INIT " + wireBall.enabled.ToString());
+                break;
+            }
+        }
+    }
+
+    public void ToggleWireBallMode(bool val)
+    {
+        wireBall.enabled = val;
+        isSuperFast = val;
+    }
+    public void ToggleWireBall()
+    {
+        wireBall.enabled = !wireBall.enabled;
+        isSuperFast = !isSuperFast;
+        Debug.Log("ball toggled to " + wireBall.enabled.ToString());
     }
 
 
@@ -116,6 +148,7 @@ public class ItemBehaviour : MonoBehaviour
             return;
         }
         float elapsedSec = Time.time - lastTime;
+
 
         lastPos = transform.position;
         if (Math.Abs(shipTilt) > .25f)
@@ -166,13 +199,14 @@ public class ItemBehaviour : MonoBehaviour
             // update timer for measuring time since last shot
             if (timeSinceShot < waitTime)
                 timeSinceShot += Time.deltaTime;
-                
+
             
             // shooting
             if (Input.GetMouseButton(1))
             {
                 if (timeSinceShot > waitTime)
                 {
+                    Debug.Log("wireball TEST " + wireBall.enabled.ToString());
                     Shoot();
                     timeSinceShot = 0;
                 }
@@ -218,6 +252,12 @@ public class ItemBehaviour : MonoBehaviour
             }
 
         }
+
+        // if ship is in ball mode then rotate its wireball mesh
+      //  if (wireBall.enabled)
+        {
+      //      wireBall.gameObject.transform.RotateAround(Vector3.left, elapsedSec*60f);
+        }
        // healthBar.UpdateBar(currHealth, maxHealth);
             
 
@@ -237,19 +277,18 @@ public class ItemBehaviour : MonoBehaviour
         {
             this.lastMoveUpdate = newPos;
             this.lastMoveUpdateTime = Time.time;
-            
+
             nbuffer.AddNetworkState(newPos,Time.time);
 
         }
 
         bool moveAbsolute = ShowActor(true);
         transform.position =  nbuffer.GetRewindedPos(Time.time - .1f);
-        
+
         if (this.item.IsMine)
             playerCam.GetComponent<CameraController>().SetPlayerPos();
 
-     
-//
+
 //        // move smoothly
 //        float lerpT = (Time.time - this.lastMoveUpdateTime) / timeBetweenUpdates;
 //        Debug.Log("lerpt " + lerpT.ToString() +" lmupt " + this.lastMoveUpdateTime.ToString() +
@@ -295,7 +334,7 @@ public class ItemBehaviour : MonoBehaviour
             this.actorViewExit.transform.localScale *= 0;
         }
 
-
+ 
         // update text
         actorText.text = this.item.Text;
         if (this.item.IsMine)
@@ -313,6 +352,16 @@ public class ItemBehaviour : MonoBehaviour
         {
             actorText.text = string.Format("{0}", this.item.Text);
         }
+        
+        if (firstUpdate)
+        {
+            //     wireBall.enabled = !wireBall.enabled;
+            firstUpdate = false;
+            Debug.Log("wireball fu " + wireBall.enabled.ToString());
+        }
+
+        if (wireBall.enabled)
+            pbuffsize = 80;
         
         displacement2Last2Frame = displacement2LastFrame;
         displacement2LastFrame = (transform.position - lastPos).sqrMagnitude;
@@ -373,7 +422,7 @@ public class ItemBehaviour : MonoBehaviour
             foreach (var render in renderers)
             {
                 // dont toggle renderer for specials, only the specials toggle those
-                if (render.gameObject.tag == "laser" || render.gameObject.tag == "saber")
+                if (render.gameObject.tag == "laser" || render.gameObject.tag == "saber" || render.gameObject.tag == "wireball")
                     continue;
                 render.enabled = show;
             }

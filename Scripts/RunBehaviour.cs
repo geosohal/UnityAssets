@@ -10,7 +10,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections;
 using ExitGames.Client.Photon;
 using Photon.MmoDemo.Client;
 using Photon.MmoDemo.Common;
@@ -48,10 +47,13 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     public GameObject UpdateText;
     public GameObject BurstPrefab;
     public GameObject BombPrefab;
+    public GameObject ShipDestroyedPrefab;
+    public GameObject ShipBigDestroyedPrefab;
     public GameObject TpOutEffect;
     public GameObject TpInEffect;
     public GameObject HpBox;
     public GameObject MotherMobPrefab;
+    public GameObject BallModeStartEffect;
     public SimpleHealthBar mpBar;
 
     public List<Tuple<GameObject,float>> Expirableffects;
@@ -88,7 +90,11 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     public AudioClip teleportSound;
     public AudioClip burstSound;
     public AudioClip saberSound;
+    public AudioClip shipExplosionSound;
+    public AudioClip shipExplosionSoundBig;
     public AudioClip thrustSound;
+    public AudioClip shipHitSound;
+    public AudioClip shipHitSoundM;
     
     private float lastKeyPress;
     private Vector? lastMovePosition;
@@ -99,6 +105,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     private float nextRotTime;
     private GameObject actorGo;
     private Dictionary<string, ItemBehaviour> actorTable;
+    private Dictionary<string, BotBehaviour> botTable;
     private float lastTime;
     
     // speed boost related members
@@ -128,6 +135,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     public float saberCost = 10f;
     public float laserCost = 7f;
     public float bombCost = 10f;
+    public float ballCost = 7f;
     public float bulletCost = 3f;
     public float shieldCost = 6f;
     
@@ -135,6 +143,8 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     public float secTillUpdate = .05f;
 
     private AudioSource audioSource;
+
+    public bool isFirstUpdate;
 
     public Game Game
     {
@@ -159,6 +169,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         var peer = new PhotonPeer(this.Game, settings.UseTcp ? ConnectionProtocol.Tcp : ConnectionProtocol.Udp) { ChannelCount = 3 };
         this.Game.Initialize(peer);
         actorTable = new Dictionary<string, ItemBehaviour>();
+        botTable = new Dictionary<string, BotBehaviour>();
         avatarVelocity = new Vector2(0,0);
         maxVelSq = MaxVel * MaxVel;
         lastRotStored = new Vector(1,0);
@@ -174,18 +185,21 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         abilities.Add((burstAbility));
         SpecialAbility saberAbility = new SpecialAbility(12f, KeyCode.F, SpecialAbility.SpecialType.Saber, hudText, saberCost);
         abilities.Add(saberAbility);
-        SpecialAbility laserAbility = new SpecialAbility(4f, KeyCode.D, SpecialAbility.SpecialType.Laser, hudText, laserCost );
+        SpecialAbility laserAbility = new SpecialAbility(4f, KeyCode.Q, SpecialAbility.SpecialType.Laser, hudText, laserCost );
         abilities.Add((laserAbility));
-        SpecialAbility bombAbility = new SpecialAbility(3f, KeyCode.A, SpecialAbility.SpecialType.Bomb, hudText, bombCost );
+        SpecialAbility bombAbility = new SpecialAbility(3f, KeyCode.Z, SpecialAbility.SpecialType.Bomb, hudText, bombCost );
         abilities.Add(bombAbility);
         SpecialAbility shieldAbility = new SpecialAbility(6f, KeyCode.C, SpecialAbility.SpecialType.Shield, hudText, bombCost );
         abilities.Add(shieldAbility);
+        SpecialAbility ballAbility = new SpecialAbility(1f, KeyCode.X, SpecialAbility.SpecialType.BallMode, hudText, ballCost );
+        abilities.Add(ballAbility);
         wasTeleported = false;
         isMegaThrusting = false;
         Expirableffects = new List<Tuple<GameObject, float>>();
         currMP = maxMP;
 
         audioSource = GetComponent<AudioSource>();
+        isFirstUpdate = true;
     }
 
     public void Start()
@@ -301,6 +315,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
                             Vector3 newPos = new Vector3(lastMovePosition.Value.X, 0, lastMovePosition.Value.Y)*WorldToUnityFactor;
 
                             GameObject effect = Instantiate(TpInEffect, newPos, Quaternion.identity);
+                            effect.name = "Foll"; // set effect to follow player pos
                             Expirableffects.Add(new Tuple<GameObject, float>(effect, timeToDestroyExpirableEffect));;
                             break;
                         
@@ -319,6 +334,24 @@ public class RunBehaviour : MonoBehaviour, IGameListener
                             break;
                         case SpecialAbility.SpecialType.Bomb:
                             Game.Avatar.LaunchBomb(new Vector(clientsPlayer.transform.forward.x, clientsPlayer.transform.forward.z));
+                            break;
+                        case SpecialAbility.SpecialType.BallMode:
+                            if (!clientsPlayer.isSuperFast)
+                            {
+                                clientsPlayer.ToggleWireBall();
+                                Game.Avatar.StartSuperFast();
+                                Vector3 nextPos = clientsPlayer.transform.position;
+                                GameObject balleffect = Instantiate(BallModeStartEffect, nextPos, Quaternion.identity);
+                                balleffect.name = "Foll"; // set effect to follow player pos
+                                Expirableffects.Add(new Tuple<GameObject, float>(balleffect,
+                                    timeToDestroyExpirableEffect));
+                            }
+                            else
+                            {
+                                Game.Avatar.EndSuperFast();
+                                clientsPlayer.ToggleWireBall();
+                            }
+
                             break;
                     }
                 }
@@ -374,7 +407,11 @@ public class RunBehaviour : MonoBehaviour, IGameListener
                     } // if (ib.laserTimeLeft <= 0)
                 }
             } // foreach ib (actor) in actor table
-            
+
+            if (isFirstUpdate)
+            {
+            }
+
         } // if gameworld entered
 
         UpdateExpirableEffects(elapsedSec);
@@ -427,6 +464,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
                 string ownerId = effect.first.name.Substring(4);
                 if (actorTable.ContainsKey(ownerId))
                 {
+                    Debug.Log("effect following player");
                     ((GameObject) effect.first).transform.position = actorTable[ownerId].transform.position;
                 }
             }
@@ -515,8 +553,8 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         BotBehaviour bb = newbot.GetComponent<BotBehaviour>();
         if (bb == null)
             bb = newbot.AddComponent(typeof (BotBehaviour)) as BotBehaviour;
-        bb.Initialize(this.Game, bot, this.ItemObjectName(bot), null);
-        
+        bb.Initialize(this.Game, bot, this.ItemObjectName(bot), null, false);
+        botTable.Add(bot.Id, bb);
         Debug.Log("made bot on client");
     }
     
@@ -527,7 +565,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         BotBehaviour bb = newbot.GetComponent<BotBehaviour>();
         if (bb == null)
             bb = newbot.AddComponent(typeof (BotBehaviour)) as BotBehaviour;
-        bb.Initialize(this.Game, bot, this.ItemObjectName(bot), null);
+        bb.Initialize(this.Game, bot, this.ItemObjectName(bot), null, true);
         
         Debug.Log("made mother bot on client");
     }
@@ -638,6 +676,20 @@ public class RunBehaviour : MonoBehaviour, IGameListener
             Debug.Log("removing hp box");
             objName = item.Id;
             Destroy(GameObject.Find(objName));
+        }
+        else if (item.Type == ItemType.Bot)
+        {
+            
+            objName = this.ItemObjectName(item);
+            Debug.Log("removing bot" + objName + " aka" + item.Id);
+            if (botTable.ContainsKey(item.Id))
+            {
+                if (item.Id.StartsWith("bo"))
+                    OnShipExplosion(item.Position);
+                else if (item.Id.StartsWith("mob"))
+                    OnShipExplosionBig(item.Position);
+                //botTable[item.Id].DeathAnimation(Expirableffects);
+            }
         }
         else 
             objName = this.ItemObjectName(item);
@@ -1139,7 +1191,18 @@ public class RunBehaviour : MonoBehaviour, IGameListener
             clientsPlayer.TakeDamageAndUpdateBar(hpChange);
         else
         {
-             actorTable[itemId].TakeDamage((hpChange));
+            if (itemId.StartsWith("bo"))    // if we're decrementing a bots hp
+            {
+                audioSource.PlayOneShot(shipHitSound, .4f);
+                botTable[itemId].TakeDamage((hpChange));
+            }
+            else if (itemId.StartsWith("mb"))
+            {
+                audioSource.PlayOneShot(shipHitSoundM, .5f);
+                botTable[itemId].TakeDamage((hpChange));
+            }
+            else// decrement a players hp
+                actorTable[itemId].TakeDamage((hpChange));
         }
     }
 
@@ -1151,6 +1214,24 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         burst.transform.localScale = new Vector3(2f,2f,2f);
         Expirableffects.Add(new Tuple<GameObject, float>(burst, timeToDestroyExpirableEffect));
         
+    }
+
+    public void OnShipExplosion(Vector pos)
+    {
+        audioSource.PlayOneShot(shipExplosionSound, .8f);
+        Debug.Log("explo at " + pos.ToString());
+        GameObject explo = Instantiate(ShipDestroyedPrefab, new Vector3(pos.X,0,pos.Y) * WorldToUnityFactor, Quaternion.identity);
+        //burst.transform.localScale = new Vector3(2f,2f,2f);
+        Expirableffects.Add(new Tuple<GameObject, float>(explo, timeToDestroyExpirableEffect));
+    }
+    
+    public void OnShipExplosionBig(Vector pos)
+    {
+        audioSource.PlayOneShot(shipExplosionSoundBig, .9f);
+        Debug.Log("b explo at " + pos.ToString());
+        GameObject explo = Instantiate(ShipDestroyedPrefab, new Vector3(pos.X,0,pos.Y) * WorldToUnityFactor, Quaternion.identity);
+        ShipDestroyedPrefab.transform.localScale = new Vector3(3.5f,3.5f,3.5f);
+        Expirableffects.Add(new Tuple<GameObject, float>(explo, timeToDestroyExpirableEffect));
     }
 
     public void OnBombSpawn(string itemId)

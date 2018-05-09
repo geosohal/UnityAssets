@@ -1278,7 +1278,7 @@ MonoBehaviour:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1061734860}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 575553740, guid: f5f67c52d1564df4a8936ccd202a3bd8, type: 3}
   m_Name: 
@@ -1352,7 +1352,7 @@ MonoBehaviour:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1061734860}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: -765806418, guid: f5f67c52d1564df4a8936ccd202a3bd8, type: 3}
   m_Name: 
@@ -1495,7 +1495,7 @@ MonoBehaviour:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1218644689}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 708705254, guid: f5f67c52d1564df4a8936ccd202a3bd8, type: 3}
   m_Name: 
@@ -1586,7 +1586,7 @@ MonoBehaviour:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1230418861}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 708705254, guid: f5f67c52d1564df4a8936ccd202a3bd8, type: 3}
   m_Name: 
@@ -1672,19 +1672,19 @@ Prefab:
       objectReference: {fileID: 0}
     - target: {fileID: 22403254, guid: 60da1df1f7edb3747bea8f735b2768d1, type: 2}
       propertyPath: m_AnchoredPosition.x
-      value: -278
+      value: -222
       objectReference: {fileID: 0}
     - target: {fileID: 22403254, guid: 60da1df1f7edb3747bea8f735b2768d1, type: 2}
       propertyPath: m_AnchoredPosition.y
-      value: 284.1
+      value: 274.2
       objectReference: {fileID: 0}
     - target: {fileID: 22403254, guid: 60da1df1f7edb3747bea8f735b2768d1, type: 2}
       propertyPath: m_SizeDelta.x
-      value: 384
+      value: 150
       objectReference: {fileID: 0}
     - target: {fileID: 22403254, guid: 60da1df1f7edb3747bea8f735b2768d1, type: 2}
       propertyPath: m_SizeDelta.y
-      value: 32
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 22403254, guid: 60da1df1f7edb3747bea8f735b2768d1, type: 2}
       propertyPath: m_AnchorMin.x
@@ -1782,7 +1782,7 @@ MonoBehaviour:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1333589536}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 708705254, guid: f5f67c52d1564df4a8936ccd202a3bd8, type: 3}
   m_Name: 
@@ -1889,6 +1889,48 @@ CanvasRenderer:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1363431224}
+--- !u!1001 &1434862368
+Prefab:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4494902900061866, guid: 0b2fbb26d54aab14784d2125212132a2, type: 2}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4494902900061866, guid: 0b2fbb26d54aab14784d2125212132a2, type: 2}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4494902900061866, guid: 0b2fbb26d54aab14784d2125212132a2, type: 2}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4494902900061866, guid: 0b2fbb26d54aab14784d2125212132a2, type: 2}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4494902900061866, guid: 0b2fbb26d54aab14784d2125212132a2, type: 2}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4494902900061866, guid: 0b2fbb26d54aab14784d2125212132a2, type: 2}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4494902900061866, guid: 0b2fbb26d54aab14784d2125212132a2, type: 2}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4494902900061866, guid: 0b2fbb26d54aab14784d2125212132a2, type: 2}
+      propertyPath: m_RootOrder
+      value: 6
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_ParentPrefab: {fileID: 100100000, guid: 0b2fbb26d54aab14784d2125212132a2, type: 2}
+  m_IsPrefabParent: 0
 --- !u!1 &1532294843
 GameObject:
   m_ObjectHideFlags: 0
@@ -2029,11 +2071,15 @@ MonoBehaviour:
   UpdateText: {fileID: 328754711}
   BurstPrefab: {fileID: 100012, guid: 06cff0f24d5664781859b6da3e421fa4, type: 2}
   BombPrefab: {fileID: 1942368064365020, guid: 898ebc12c760b214ebb0bf1168e935ec, type: 2}
+  ShipDestroyedPrefab: {fileID: 100008, guid: 95cb04c70e05847c0a30450e4c714700, type: 2}
+  ShipBigDestroyedPrefab: {fileID: 100008, guid: 95cb04c70e05847c0a30450e4c714700,
+    type: 2}
   TpOutEffect: {fileID: 196988, guid: 2dc0791df667f4f4586152f049c46254, type: 2}
   TpInEffect: {fileID: 145588, guid: a82c78eebe327ca42b37f892837dbe21, type: 2}
   HpBox: {fileID: 1843250739121098, guid: d6a93dd26770bc341869358fa358fbd1, type: 2}
   MotherMobPrefab: {fileID: 1751531680320082, guid: 7ff9dcc1823a29a4684529b98058513b,
     type: 2}
+  BallModeStartEffect: {fileID: 100012, guid: 4bc8dc28f9ba24e57a0d84aa5db5e48d, type: 2}
   mpBar: {fileID: 0}
   MaxUnityUnitsForWorld: 1000
   WorldNameText: {fileID: 1333589538}
@@ -2041,7 +2087,7 @@ MonoBehaviour:
   WorldYUnitsText: {fileID: 1766330671}
   AreaUnitsXText: {fileID: 218943862}
   AreaUnitsYText: {fileID: 313086422}
-  ThrustForce: 1
+  ThrustForce: 5
   MaxVel: 180
   breakDampFactor: 0.96
   megaThrustFactor: 3
@@ -2053,7 +2099,12 @@ MonoBehaviour:
   teleportSound: {fileID: 8300000, guid: 06f5abb8109430b4088f480b318f061b, type: 3}
   burstSound: {fileID: 8300000, guid: ac3adf3ca6b1a3341a9cc1fa0f2051e1, type: 3}
   saberSound: {fileID: 8300000, guid: d24c26066e693c349808746a4ae383cb, type: 3}
+  shipExplosionSound: {fileID: 8300000, guid: c777feaacbba25049a187c3aa29f92c1, type: 3}
+  shipExplosionSoundBig: {fileID: 8300000, guid: d658a9d0180b99a47999cc91890ebc49,
+    type: 3}
   thrustSound: {fileID: 0}
+  shipHitSound: {fileID: 8300000, guid: 9b213d8ad066d374088646147d17b50c, type: 3}
+  shipHitSoundM: {fileID: 8300000, guid: 40c30feabd4ddd240a8aac9a1b47d764, type: 3}
   maxMP: 200
   MPpersec: 3
   thrustCostPerSec: 4
@@ -2062,9 +2113,11 @@ MonoBehaviour:
   saberCost: 10
   laserCost: 7
   bombCost: 10
+  ballCost: 7
   bulletCost: 3
   shieldCost: 6
   secTillUpdate: 0.025
+  isFirstUpdate: 0
 --- !u!4 &1533060146
 Transform:
   m_ObjectHideFlags: 0
@@ -2449,19 +2502,19 @@ Prefab:
       objectReference: {fileID: 0}
     - target: {fileID: 22403254, guid: 60da1df1f7edb3747bea8f735b2768d1, type: 2}
       propertyPath: m_AnchoredPosition.x
-      value: -278
+      value: -223
       objectReference: {fileID: 0}
     - target: {fileID: 22403254, guid: 60da1df1f7edb3747bea8f735b2768d1, type: 2}
       propertyPath: m_AnchoredPosition.y
-      value: 316
+      value: 285
       objectReference: {fileID: 0}
     - target: {fileID: 22403254, guid: 60da1df1f7edb3747bea8f735b2768d1, type: 2}
       propertyPath: m_SizeDelta.x
-      value: 384
+      value: 150
       objectReference: {fileID: 0}
     - target: {fileID: 22403254, guid: 60da1df1f7edb3747bea8f735b2768d1, type: 2}
       propertyPath: m_SizeDelta.y
-      value: 32
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 22403254, guid: 60da1df1f7edb3747bea8f735b2768d1, type: 2}
       propertyPath: m_AnchorMin.x
@@ -2762,7 +2815,7 @@ MonoBehaviour:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 2023531343}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 708705254, guid: f5f67c52d1564df4a8936ccd202a3bd8, type: 3}
   m_Name: 
