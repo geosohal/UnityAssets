@@ -1030,6 +1030,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
                 avatarVelocity += new Vector2(lastRotStored.X, lastRotStored.Y) * ThrustForce * currMegaThrust;
 
                 ParticleSystem[] psystems = clientsPlayer.GetComponentsInChildren<ParticleSystem>();
+                clientsPlayer.ApplyGridForce(2, 4);
                 foreach (ParticleSystem ps in psystems)
                 {
                     if (ps.gameObject.CompareTag("engineThrust"))
@@ -1063,6 +1064,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
                 avatarVelocity -= new Vector2(lastRotStored.X, lastRotStored.Y) * ThrustForce * currMegaThrust;
                 
                 ParticleSystem[] psystems = clientsPlayer.GetComponentsInChildren<ParticleSystem>();
+                clientsPlayer.ApplyGridForce(2, 4);
                 foreach (ParticleSystem ps in psystems)
                 {
                     if (ps.gameObject.CompareTag("engineThrust"))

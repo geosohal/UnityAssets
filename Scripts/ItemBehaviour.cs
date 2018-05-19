@@ -80,7 +80,12 @@ public class ItemBehaviour : MonoBehaviour
 
     private MeshRenderer wireBall;
     private bool firstUpdate;
-    
+
+    private Vector3 prevMouse;
+
+    public bool IsWASDfirst;
+
+    public GameObject vectorGrid;
 
     public void Destroy()
     {
@@ -101,7 +106,8 @@ public class ItemBehaviour : MonoBehaviour
         {
             playerCam = GameObject.FindWithTag("MainCamera");
             playerCam.GetComponent<CameraController>().playerShip = this.gameObject;
-            
+            vectorGrid = GameObject.FindWithTag("vectorgrid");
+            //vectorGrid.GetComponent<VectorGrid>().
         }
         //        GameObject.FindWithTag("MainCamera").GetComponent<MSCameraController>().playerObject = this.gameObject;
             
@@ -122,6 +128,8 @@ public class ItemBehaviour : MonoBehaviour
                 break;
             }
         }
+
+        prevMouse = Input.mousePosition;
     }
 
     public void ToggleWireBallMode(bool val)
@@ -134,6 +142,11 @@ public class ItemBehaviour : MonoBehaviour
         wireBall.enabled = !wireBall.enabled;
         isSuperFast = !isSuperFast;
         Debug.Log("ball toggled to " + wireBall.enabled.ToString());
+    }
+
+    public void ApplyGridForce(float force, float radius)
+    {
+        vectorGrid.GetComponent<VectorGrid>().AddGridForce(this.transform.position, force, radius, Color.cyan, true);
     }
 
 
@@ -156,51 +169,75 @@ public class ItemBehaviour : MonoBehaviour
         // set rotation of our ship
         if (this.item.IsMine)
         {
-            // make ship face mouse
-            Plane playerPlane = new Plane(Vector3.up, transform.position);
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            float hitDist = 0.0f;
-
-            if (playerPlane.Raycast(ray, out hitDist))
+            if (!isThirdPerson)
             {
-                Vector3 targetPoint = ray.GetPoint(hitDist);
-                targetPoint.y = transform.position.y;
-                Vector3 newForward = targetPoint - transform.position;
-                newForward = newForward.normalized;
-                
-                float deltaAngle = -Vector3.SignedAngle(transform.forward, newForward, Vector3.up);
-                hudObj.GetComponent<Text>().text =deltaAngle.ToString();
-                
+                Cursor.visible = true;
+                // make ship face mouse
+                Plane playerPlane = new Plane(Vector3.up, transform.position);
+                Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+                float hitDist = 0.0f;
 
-                if (isThirdPerson)
+                if (playerPlane.Raycast(ray, out hitDist))
                 {
-                    if (deltaAngle > 20f || deltaAngle < -20f)// change ship angle only if mouse is out of center line
+                    Vector3 targetPoint = ray.GetPoint(hitDist);
+                    targetPoint.y = transform.position.y;
+                    Vector3 newForward = targetPoint - transform.position;
+                    newForward = newForward.normalized;
+
+                    float deltaAngle = -Vector3.SignedAngle(transform.forward, newForward, Vector3.up);
+                    hudObj.GetComponent<Text>().text = deltaAngle.ToString();
+
+
+                    if (isThirdPerson)
                     {
-                        newForward = Vector3.Lerp(transform.forward, newForward, (Math.Abs(deltaAngle) - 20f) / 350f);
-                        hudObj.GetComponent<Text>().text =deltaAngle.ToString() + "r";
+                        if (deltaAngle > 20f || deltaAngle < -20f
+                        ) // change ship angle only if mouse is out of center line
+                        {
+                            newForward = Vector3.Lerp(transform.forward, newForward,
+                                (Math.Abs(deltaAngle) - 20f) / 350f);
+                            hudObj.GetComponent<Text>().text = deltaAngle.ToString() + "r";
+                        }
+                        else
+                        {
+                            newForward = Vector3.Lerp(transform.forward, newForward, Math.Abs(deltaAngle) / 1350f);
+
+                        }
+
+                        deltaAngle *= .1f;
                     }
-                    else
-                    {
-                        newForward = Vector3.Lerp(transform.forward, newForward, Math.Abs(deltaAngle) / 1350f);
-                        
-                    }
-                    deltaAngle *= .1f;
+
+                    if (Math.Abs(shipTilt + deltaAngle) < 40f)
+                        shipTilt += deltaAngle;
+
+                    transform.rotation = Quaternion.LookRotation(newForward, Vector3.up) *
+                                         Quaternion.AngleAxis(shipTilt, Vector3.forward);
+                    SetRotation(newForward); // set Item's rotation so other players can get update
+
                 }
-                
-                if (Math.Abs(shipTilt + deltaAngle) < 40f)
-                    shipTilt += deltaAngle;
-                
-                transform.rotation = Quaternion.LookRotation(newForward, Vector3.up) *
-                                     Quaternion.AngleAxis(shipTilt, Vector3.forward);
-                SetRotation(newForward); // set Item's rotation so other players can get update
-                
             }
+            else if (isThirdPerson)
+            {
+                Cursor.visible = false;
+                
+                Vector3 deltaMousePos = Input.mousePosition - prevMouse;
+                deltaMousePos *= .01f;
+                float deltaX = deltaMousePos.x;
+                if (Input.GetKey(KeyCode.A))
+                    deltaX -= .03f;
+                if (Input.GetKey(KeyCode.D))
+                    deltaX += .03f;
+                Vector3 newFwd = Quaternion.EulerRotation(0, deltaX, 0) * transform.forward;
 
-            // update timer for measuring time since last shot
-            if (timeSinceShot < waitTime)
-                timeSinceShot += Time.deltaTime;
+                if (Math.Abs(shipTilt + deltaX) < 40f)
+                    shipTilt += - deltaX*30f;
 
-            
+                transform.rotation = Quaternion.LookRotation(newFwd, Vector3.up) *
+                                     Quaternion.AngleAxis(shipTilt, Vector3.forward);
+                SetRotation(newFwd); // set Item's rotation so other players can get update
+
+                prevMouse = Input.mousePosition;
+            }
+                        
             // shooting
             if (Input.GetMouseButton(1))
             {
@@ -211,9 +248,11 @@ public class ItemBehaviour : MonoBehaviour
                     timeSinceShot = 0;
                 }
             }
-            
-            
+            // update timer for measuring time since last shot
+            if (timeSinceShot < waitTime)
+                timeSinceShot += Time.deltaTime;
         }
+
         else if (this.item.IsMine == false) 
         {
             // set rotations of other ships using their item rotations

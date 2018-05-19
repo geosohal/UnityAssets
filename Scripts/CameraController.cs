@@ -82,11 +82,5 @@ public class CameraController : MonoBehaviour {
 				ourLookAtPos = playerShip.transform.position;
 			transform.rotation = Quaternion.LookRotation(ourLookAtPos - transform.position);
 		}
-
-		
-		
-		
 	}
-	
-
 }
