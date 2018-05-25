@@ -317,7 +317,7 @@ MonoBehaviour:
   msaberTimeLeft: 11
   laserTimeLeft: 0
   saberTimeLeft: 0
-  isThirdPerson: 1
+  isThirdPerson: 0
   isSuperFast: 0
   IsWASDfirst: 0
 --- !u!114 &11497700

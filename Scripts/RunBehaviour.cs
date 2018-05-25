@@ -146,6 +146,10 @@ public class RunBehaviour : MonoBehaviour, IGameListener
 
     public bool isFirstUpdate;
 
+    
+    public float moveForceRadius;
+    public float moveForce;
+
     public Game Game
     {
         get { return this.game; }
@@ -1030,7 +1034,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
                 avatarVelocity += new Vector2(lastRotStored.X, lastRotStored.Y) * ThrustForce * currMegaThrust;
 
                 ParticleSystem[] psystems = clientsPlayer.GetComponentsInChildren<ParticleSystem>();
-                clientsPlayer.ApplyGridForce(2, 4);
+                clientsPlayer.ApplyGridForce(moveForce, moveForceRadius);
                 foreach (ParticleSystem ps in psystems)
                 {
                     if (ps.gameObject.CompareTag("engineThrust"))
@@ -1064,7 +1068,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
                 avatarVelocity -= new Vector2(lastRotStored.X, lastRotStored.Y) * ThrustForce * currMegaThrust;
                 
                 ParticleSystem[] psystems = clientsPlayer.GetComponentsInChildren<ParticleSystem>();
-                clientsPlayer.ApplyGridForce(2, 4);
+                clientsPlayer.ApplyGridForce(moveForce, moveForceRadius);
                 foreach (ParticleSystem ps in psystems)
                 {
                     if (ps.gameObject.CompareTag("engineThrust"))

@@ -85,7 +85,9 @@ public class ItemBehaviour : MonoBehaviour
 
     public bool IsWASDfirst;
 
-    public GameObject vectorGrid;
+    private GameObject vectorGrid;
+    private VectorGrid gridComponent;
+    
 
     public void Destroy()
     {
@@ -107,7 +109,8 @@ public class ItemBehaviour : MonoBehaviour
             playerCam = GameObject.FindWithTag("MainCamera");
             playerCam.GetComponent<CameraController>().playerShip = this.gameObject;
             vectorGrid = GameObject.FindWithTag("vectorgrid");
-            //vectorGrid.GetComponent<VectorGrid>().
+ //           vectorGrid.transform.position = this.transform.position;
+            gridComponent = vectorGrid.GetComponentInChildren<VectorGrid>();
         }
         //        GameObject.FindWithTag("MainCamera").GetComponent<MSCameraController>().playerObject = this.gameObject;
             
@@ -146,7 +149,8 @@ public class ItemBehaviour : MonoBehaviour
 
     public void ApplyGridForce(float force, float radius)
     {
-        vectorGrid.GetComponent<VectorGrid>().AddGridForce(this.transform.position, force, radius, Color.cyan, true);
+        if (vectorGrid != null)
+            gridComponent.AddGridForce(this.transform.position, force, radius, Color.yellow, true);
     }
 
 
@@ -214,7 +218,7 @@ public class ItemBehaviour : MonoBehaviour
                     SetRotation(newForward); // set Item's rotation so other players can get update
 
                 }
-            }
+            } // end of not third person
             else if (isThirdPerson)
             {
                 Cursor.visible = false;
@@ -251,7 +255,10 @@ public class ItemBehaviour : MonoBehaviour
             // update timer for measuring time since last shot
             if (timeSinceShot < waitTime)
                 timeSinceShot += Time.deltaTime;
-        }
+
+           // if (vectorGrid != null)
+         //       vectorGrid.transform.position = this.transform.position;
+        } // if mine
 
         else if (this.item.IsMine == false) 
         {

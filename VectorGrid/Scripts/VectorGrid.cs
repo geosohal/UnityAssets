@@ -350,10 +350,13 @@ public class VectorGrid : MonoBehaviour
 				
 				if(!m_AllowVerticalScroll)
 				{
-					cameraMovement.z = 0;
+					cameraMovement.y = 0;
 				}
 
-				this.transform.localPosition += cameraMovement;
+				Vector3 currPos = this.transform.localPosition;
+				currPos.x += cameraMovement.x;
+				currPos.y += cameraMovement.z;
+				this.transform.localPosition = currPos;
 				Scroll(new Vector2(-cameraMovement.x * m_ParallaxScroll.x, -cameraMovement.z * m_ParallaxScroll.y));
 			}
 

@@ -75,6 +75,36 @@ public class VectorGridPoint
 		m_MaxFogAlphaScale = maxFogAlphaScale;
 		m_InvMaxFogDistance = maxFogDistance > 0.0f? 1.0f/maxFogDistance : 0.0f;
 	}
+	
+	
+	/// <summary>
+	/// Initialise the grid point where z is y
+	/// </summary>
+	public void Init2(Vector3 position, float mass, float velocityDamping, Color color, float maxFogDistance, float maxFogAlphaScale, bool twoWayFog)
+	{
+		m_Color = m_FoggedColor = m_TargetColor = m_InitialColor = color;
+		m_TwoWayFog = twoWayFog;
+		m_Position = AddWithXZReversed(m_OriginalPosition,position);
+		
+		if(mass > 0.0f)
+		{
+			m_InverseMass = 1.0f/mass;
+		}
+		
+		m_Damping = m_DefaultDamping = velocityDamping;
+		m_Velocity = Vector3.zero;
+		m_Acceleration = Vector3.zero;
+		m_MaxFogAlphaScale = maxFogAlphaScale;
+		m_InvMaxFogDistance = maxFogDistance > 0.0f? 1.0f/maxFogDistance : 0.0f;
+	}
+	
+	// rhs y and z are reversed when added to lhs
+	private Vector3 AddWithXZReversed(Vector3 lhs, Vector3 rhs)
+	{
+		lhs.x += rhs.x;
+		lhs.y += rhs.z;
+		return lhs;
+	}
 
 	/// <summary>
 	/// Apply a force to grid point

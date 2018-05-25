@@ -21,6 +21,9 @@ public class Bullet : MonoBehaviour
 	public static int pbuffsize = 80;
 	private NStateBuffer nbuffer;
 	
+	private GameObject vectorGrid;
+	private VectorGrid gridComponent;
+	
 	// Use this for initialization
 	void Start () {
 		
@@ -33,6 +36,9 @@ public class Bullet : MonoBehaviour
 		firstUpdate = true;
 		nbuffer = new NStateBuffer(pbuffsize);
 		Show(false);
+		
+		vectorGrid = GameObject.FindWithTag("vectorgrid");
+		gridComponent = vectorGrid.GetComponentInChildren<VectorGrid>();
 	}
 	
 	// Update is called once per frame
@@ -65,6 +71,7 @@ public class Bullet : MonoBehaviour
 			nbuffer.AddNetworkState(newPos,lastMoveUpdateTime);
 			if (nbuffer.posSetCount > 2)
 				Show(true);
+			ApplyGridForce(.7f,7);
 		}
 		
 		transform.position =  nbuffer.GetRewindedPos(Time.time - .1f);
@@ -80,6 +87,13 @@ public class Bullet : MonoBehaviour
 
 
 	}
+	
+	public void ApplyGridForce(float force, float radius)
+	{
+		if (vectorGrid != null)
+			gridComponent.AddGridForce(this.transform.position, force, radius, Color.cyan, true);
+	}
+
 
 	private void OnCollisionEnter2D(Collision2D collision)
 	{
