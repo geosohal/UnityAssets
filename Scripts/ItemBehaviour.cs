@@ -9,9 +9,11 @@
 
 using System;
 using Photon.MmoDemo.Client;
+using Photon.MmoDemo.Common;
 using UnityEngine;
 using UnityEngine.Assertions.Must;
 using UnityEngine.UI;
+using UnityEngine.XR.WSA.Sharing;
 using Object = UnityEngine.Object;
 
 // a snapshot of values received over the network
@@ -82,12 +84,15 @@ public class ItemBehaviour : MonoBehaviour
     private bool firstUpdate;
 
     private Vector3 prevMouse;
+    private Vector3 fwdByMouse;    // forward direction  made by ship to mouse cursor
 
     public bool IsWASDfirst;
 
     private GameObject vectorGrid;
     private VectorGrid gridComponent;
-    
+
+    public GameObject laserObject;
+    public GameObject saberObject;
 
     public void Destroy()
     {
@@ -104,6 +109,7 @@ public class ItemBehaviour : MonoBehaviour
                              RunBehaviour.WorldToUnityFactor;
         currHealth = maxHealth;
         healthBar = GameObject.FindWithTag("hpbar").GetComponent<SimpleHealthBar>();
+        UnparentLaserAndStoreRef();
         if (this.item.IsMine)
         {
             playerCam = GameObject.FindWithTag("MainCamera");
@@ -153,6 +159,10 @@ public class ItemBehaviour : MonoBehaviour
             gridComponent.AddGridForce(this.transform.position, force, radius, Color.yellow, true);
     }
 
+    public Vector GetMouseForward()
+    {
+        return new Vector(fwdByMouse.x, fwdByMouse.z);
+    }
 
     /// <summary>
     /// Updates to item logic once per frame (called by Unity).
@@ -173,7 +183,24 @@ public class ItemBehaviour : MonoBehaviour
         // set rotation of our ship
         if (this.item.IsMine)
         {
-            if (!isThirdPerson)
+            if (IsWASDfirst)
+            {
+                UpdateLaserDirection();
+                UpdateSaberDirection();
+                RotateTowardsWASDDir(elapsedSec);
+                Plane playerPlane = new Plane(Vector3.up, transform.position);
+                Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+                float hitDist = 0.0f;
+
+                if (playerPlane.Raycast(ray, out hitDist))
+                {
+                    Vector3 targetPoint = ray.GetPoint(hitDist);
+                    targetPoint.y = transform.position.y;
+                    fwdByMouse = targetPoint - transform.position;
+                    fwdByMouse = fwdByMouse.normalized;
+                }
+            }
+            else if (!isThirdPerson)
             {
                 Cursor.visible = true;
                 // make ship face mouse
@@ -187,28 +214,10 @@ public class ItemBehaviour : MonoBehaviour
                     targetPoint.y = transform.position.y;
                     Vector3 newForward = targetPoint - transform.position;
                     newForward = newForward.normalized;
-
+            
                     float deltaAngle = -Vector3.SignedAngle(transform.forward, newForward, Vector3.up);
-                    hudObj.GetComponent<Text>().text = deltaAngle.ToString();
+                   // hudObj.GetComponent<Text>().text = deltaAngle.ToString();
 
-
-                    if (isThirdPerson)
-                    {
-                        if (deltaAngle > 20f || deltaAngle < -20f
-                        ) // change ship angle only if mouse is out of center line
-                        {
-                            newForward = Vector3.Lerp(transform.forward, newForward,
-                                (Math.Abs(deltaAngle) - 20f) / 350f);
-                            hudObj.GetComponent<Text>().text = deltaAngle.ToString() + "r";
-                        }
-                        else
-                        {
-                            newForward = Vector3.Lerp(transform.forward, newForward, Math.Abs(deltaAngle) / 1350f);
-
-                        }
-
-                        deltaAngle *= .1f;
-                    }
 
                     if (Math.Abs(shipTilt + deltaAngle) < 40f)
                         shipTilt += deltaAngle;
@@ -420,6 +429,52 @@ public class ItemBehaviour : MonoBehaviour
             return true;
         return false;
     }
+
+    public void RotateTowardsWASDDir(float elapsedSec)
+    {
+        float currAngle = transform.rotation.eulerAngles.y;
+        hudObj.GetComponent<Text>().text = currAngle.ToString();
+        bool? turnClockwise = null;
+       // transform.rotation = Quaternion.LookRotation(newForward, Vector3.up)
+        if (Input.GetKey(KeyCode.W) && Input.GetKey(KeyCode.A))
+            turnClockwise = IsDeltaAnglePositive(currAngle,315);
+        else if (Input.GetKey(KeyCode.S) && Input.GetKey(KeyCode.A))
+            turnClockwise = IsDeltaAnglePositive(currAngle,225);
+        else if (Input.GetKey(KeyCode.S) && Input.GetKey(KeyCode.D))
+            turnClockwise = IsDeltaAnglePositive(currAngle,135);
+        else if (Input.GetKey(KeyCode.D) && Input.GetKey(KeyCode.W))
+            turnClockwise = IsDeltaAnglePositive(currAngle, 45);
+        else if (Input.GetKey(KeyCode.W))
+            turnClockwise = IsDeltaAnglePositive(currAngle,0);
+        else if (Input.GetKey(KeyCode.A))
+            turnClockwise = IsDeltaAnglePositive(currAngle,270);
+        else if (Input.GetKey(KeyCode.S))
+            turnClockwise = IsDeltaAnglePositive(currAngle , 180);
+        else if (Input.GetKey(KeyCode.D))
+            turnClockwise = IsDeltaAnglePositive(currAngle , 90);
+
+        if (turnClockwise != null)
+        {
+            if (!(bool)turnClockwise) // we need to decrease the angle
+                transform.rotation = Quaternion.AngleAxis(currAngle - 300 * elapsedSec, Vector3.up);
+            else 
+                transform.rotation = Quaternion.AngleAxis(currAngle + 300 * elapsedSec, Vector3.up);
+        }
+    }
+
+    private bool? IsDeltaAnglePositive(float currAngle, float targetAngle)
+    {
+        float difference = currAngle - targetAngle;
+        if (Math.Abs(difference) < 3 || currAngle+360 - targetAngle < 3 || targetAngle+360 - currAngle < 3)
+            return null;
+        
+        if (Math.Abs(difference) < 180)
+            return currAngle < targetAngle;
+        else
+        {
+            return currAngle > 180;
+        }
+    }
     
     
     public bool SeemsToBeTeleporting()
@@ -481,6 +536,43 @@ public class ItemBehaviour : MonoBehaviour
         return false;
     }
 
+    private void UnparentLaserAndStoreRef()
+    {
+        var renderers = GetComponentsInChildren<Renderer>();
+        foreach (var render in renderers)
+        {
+            if (render.gameObject.tag == "laser")
+            {
+                render.gameObject.transform.parent = null;
+                laserObject = render.gameObject;
+            }
+            else if (render.gameObject.tag == "saber")
+            {
+                render.gameObject.transform.parent = null;
+                saberObject = render.gameObject;
+            }
+        }
+    }
+
+    private void UpdateLaserDirection()
+    {
+        if (laserTimeLeft > 0)
+        {
+            laserObject.transform.rotation = Quaternion.LookRotation(fwdByMouse, Vector3.up);
+            laserObject.transform.position = this.transform.position + fwdByMouse*16f ;
+        }
+    }
+    
+    
+    private void UpdateSaberDirection()
+    {
+        if (saberTimeLeft > 0)
+        {
+            saberObject.transform.rotation = Quaternion.LookRotation(fwdByMouse, Vector3.up);
+            saberObject.transform.position = this.transform.position + fwdByMouse*2f ;
+        }
+    }
+
     void Shoot()
     {
         if (this.item.IsMine)
@@ -488,7 +580,13 @@ public class ItemBehaviour : MonoBehaviour
             // Instantiate(bullet, bulletSpawnObj.transform.position, transform.rotation );
         }
 
-        Vector3 fwd = transform.forward;
+        Vector3 fwd;
+        if (!IsWASDfirst)
+            fwd = transform.forward;
+        else
+        {
+            fwd = fwdByMouse;
+        }
         ((RunBehaviour) GameObject.FindGameObjectWithTag("GameController").GetComponent<RunBehaviour>()).DoSpawnBullet(
             bulletSpawnObj.transform.position, fwd.x, fwd.z);
     }

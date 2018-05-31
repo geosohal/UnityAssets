@@ -44,6 +44,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     public GameObject ActorPrefab; // to be set in Inspector. the prefab for items/actors
     public GameObject BulletPrefab;
     public GameObject BotPrefab;
+    public GameObject BotPrefabFast;
     public GameObject UpdateText;
     public GameObject BurstPrefab;
     public GameObject BombPrefab;
@@ -177,7 +178,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         avatarVelocity = new Vector2(0,0);
         maxVelSq = MaxVel * MaxVel;
         lastRotStored = new Vector(1,0);
-        controlsType = ControlsType.DirectionFirst;
+     //   controlsType = ControlsType.DirectionFirst;
         maxVelSq = MaxVel * MaxVel;
         currMaxVelSq = maxVelSq;
         currMaxVel = MaxVel;
@@ -337,7 +338,10 @@ public class RunBehaviour : MonoBehaviour, IGameListener
                             Game.Avatar.FireLaser();
                             break;
                         case SpecialAbility.SpecialType.Bomb:
-                            Game.Avatar.LaunchBomb(new Vector(clientsPlayer.transform.forward.x, clientsPlayer.transform.forward.z));
+                            if (controlsType == ControlsType.DirectionFirst)
+                                Game.Avatar.LaunchBomb(new Vector(clientsPlayer.transform.forward.x, clientsPlayer.transform.forward.z));
+                            else if (controlsType == ControlsType.WasdFirst)
+                                Game.Avatar.LaunchBomb(clientsPlayer.GetMouseForward());
                             break;
                         case SpecialAbility.SpecialType.BallMode:
                             if (!clientsPlayer.isSuperFast)
@@ -380,13 +384,18 @@ public class RunBehaviour : MonoBehaviour, IGameListener
                     if (ib.laserTimeLeft <= 0)
                     {
                         ib.item.IsLaserFiring = false;
-                        MeshRenderer[] mrs = ib.GetComponentsInChildren<MeshRenderer>();
-                        foreach (MeshRenderer mr in mrs)
+                        if (controlsType == ControlsType.WasdFirst)
+                            ib.laserObject.GetComponent<MeshRenderer>().enabled = false;
+                        if (controlsType == ControlsType.DirectionFirst)
                         {
-                            if (mr.gameObject.tag == "laser")
+                            MeshRenderer[] mrs = ib.GetComponentsInChildren<MeshRenderer>();
+                            foreach (MeshRenderer mr in mrs)
                             {
-                                mr.enabled = false;
-                                break;
+                                if (mr.gameObject.tag == "laser")
+                                {
+                                    mr.enabled = false;
+                                    break;
+                                }
                             }
                         }
                     } // if (ib.laserTimeLeft <= 0)
@@ -399,13 +408,18 @@ public class RunBehaviour : MonoBehaviour, IGameListener
                     if (ib.saberTimeLeft <= 0)
                     {
                         ib.item.IsSaberFiring = false;
-                        MeshRenderer[] mrs = ib.GetComponentsInChildren<MeshRenderer>();
-                        foreach (MeshRenderer mr in mrs)
+                        if (controlsType == ControlsType.WasdFirst)
+                            ib.saberObject.GetComponent<MeshRenderer>().enabled = false;
+                        if (controlsType == ControlsType.DirectionFirst)
                         {
-                            if (mr.gameObject.tag == "saber")
+                            MeshRenderer[] mrs = ib.GetComponentsInChildren<MeshRenderer>();
+                            foreach (MeshRenderer mr in mrs)
                             {
-                                mr.enabled = false;
-                                break;
+                                if (mr.gameObject.tag == "saber")
+                                {
+                                    mr.enabled = false;
+                                    break;
+                                }
                             }
                         }
                     } // if (ib.laserTimeLeft <= 0)
@@ -560,6 +574,18 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         bb.Initialize(this.Game, bot, this.ItemObjectName(bot), null, false);
         botTable.Add(bot.Id, bb);
         Debug.Log("made bot on client");
+    }
+    
+    private void CreateFastBot(Item bot)
+    {
+        GameObject newbot = Instantiate(BotPrefabFast, new Vector3(bot.Position.X, 0, bot.Position.Y) * WorldToUnityFactor,
+            Quaternion.identity);
+        BotBehaviour bb = newbot.GetComponent<BotBehaviour>();
+        if (bb == null)
+            bb = newbot.AddComponent(typeof (BotBehaviour)) as BotBehaviour;
+        bb.Initialize(this.Game, bot, this.ItemObjectName(bot), null, false);
+        botTable.Add(bot.Id, bb);
+        Debug.Log("made fast bot on client");
     }
     
     private void CreateMotherMob(Item bot)
@@ -863,23 +889,41 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         {
             
           //  if (this.avatarVelocity.sqrMagnitude > .1f)
+            
+            if (this.lastRotation.HasValue)
             {
-                if (this.lastRotation.HasValue)
+                Vector lastRot = (Vector) lastRotation;
+                System.Random r = new System.Random();
+                // if (r.Next(100) < 3)
+                //   Debug.Log("lastrot " + lastRot.ToString());
+                if (controlsType == ControlsType.DirectionFirst)
                 {
-                    Vector lastRot = (Vector) lastRotation;
-                    System.Random r = new System.Random();
-                   // if (r.Next(100) < 3)
-                     //   Debug.Log("lastrot " + lastRot.ToString());
                     Game.Avatar.VelocityRotation(new Vector(avatarVelocity.x, avatarVelocity.y),
-                       new Vector(lastRot.X, lastRot.Y), isMegaThrusting);
+                        new Vector(lastRot.X, lastRot.Y), null, isMegaThrusting);
                 }
                 else
                 {
-                    Debug.Log("warning null rotation shouldnt happen");
-                    Game.Avatar.VelocityRotation(new Vector(avatarVelocity.x, avatarVelocity.y), null, isMegaThrusting);
+                    Game.Avatar.VelocityRotation(new Vector(avatarVelocity.x, avatarVelocity.y),
+                        new Vector(lastRot.X, lastRot.Y), clientsPlayer.GetMouseForward(), isMegaThrusting);
                 }
-                avatarVelocity = Vector2.zero;
             }
+        
+            else
+            {
+               // Debug.Log("warning null rotation shouldnt happen");
+                if (controlsType == ControlsType.DirectionFirst)
+                {
+                    Game.Avatar.VelocityRotation(new Vector(avatarVelocity.x, avatarVelocity.y), null, null,
+                        isMegaThrusting);
+                }
+                else
+                {
+                    Game.Avatar.VelocityRotation(new Vector(avatarVelocity.x, avatarVelocity.y), null, 
+                        clientsPlayer.GetMouseForward(), isMegaThrusting);
+                }
+            }
+            avatarVelocity = Vector2.zero;
+        
 
             // up to 20 times per second
             this.nextMoveTime = Time.time + secTillUpdate;
@@ -1010,6 +1054,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
 
         if (controlsType == ControlsType.WasdFirst)
         {
+            bool isThrusting = true;
             if (Input.GetKey(KeyCode.W) && Input.GetKey(KeyCode.A))
                 avatarVelocity = avatarVelocity + new Vector2(-1, 1) * ThrustForce * currMegaThrust;
             else if (Input.GetKey(KeyCode.S) && Input.GetKey(KeyCode.A))
@@ -1026,95 +1071,34 @@ public class RunBehaviour : MonoBehaviour, IGameListener
                 avatarVelocity = avatarVelocity + Vector2.down * ThrustForce * currMegaThrust;
             else if (Input.GetKey(KeyCode.Keypad6) || Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow))
                 avatarVelocity = avatarVelocity + Vector2.right * ThrustForce * currMegaThrust;
+            else
+                isThrusting = false;
+            
+            if (isThrusting)
+                DoThrusterEffect();
         }
         else if (controlsType == ControlsType.DirectionFirst)
         {
             if (Input.GetKey(KeyCode.W))
             {
                 avatarVelocity += new Vector2(lastRotStored.X, lastRotStored.Y) * ThrustForce * currMegaThrust;
+                DoThrusterEffect();
 
-                ParticleSystem[] psystems = clientsPlayer.GetComponentsInChildren<ParticleSystem>();
-                clientsPlayer.ApplyGridForce(moveForce, moveForceRadius);
-                foreach (ParticleSystem ps in psystems)
-                {
-                    if (ps.gameObject.CompareTag("engineThrust"))
-                    {
-                        ps.transform.rotation =
-                            clientsPlayer.transform.rotation * Quaternion.AngleAxis(180, Vector3.up);
-                        if (isMegaThrusting)
-                        {
-                            ps.startColor = new Color(.2f,.4f,1,1);
-                            ps.Emit(3);
-                        }
-                        else
-                        {
-                            ps.startColor = Color.yellow;
-                            ps.Emit(1);
-                        }
-
-                    }
-                    if (isMegaThrusting && ps.gameObject.CompareTag("megaThrust"))
-                    {
-                     //   ps.Emit(1);
-                //        ps.transform.rotation =
-                 //           clientsPlayer.transform.rotation * Quaternion.AngleAxis(-90, Vector3.forward);
-                    }
-                }
 
             }
             else if (Input.GetKey(KeyCode.S))
             {
-             //  audioSource.
+                //  audioSource.
                 avatarVelocity -= new Vector2(lastRotStored.X, lastRotStored.Y) * ThrustForce * currMegaThrust;
-                
-                ParticleSystem[] psystems = clientsPlayer.GetComponentsInChildren<ParticleSystem>();
-                clientsPlayer.ApplyGridForce(moveForce, moveForceRadius);
-                foreach (ParticleSystem ps in psystems)
-                {
-                    if (ps.gameObject.CompareTag("engineThrust"))
-                    {
-                        
-                        ps.transform.rotation = clientsPlayer.transform.rotation;
-                        if (isMegaThrusting)
-                        {
-                            ps.startColor = new Color(.2f,.4f,1,1);
-                            ps.Emit(3);
-                        }
-                        else
-                        {
-                            ps.startColor = Color.yellow;
-                            ps.Emit(1);
-                        }
-                    }
+                DoThrusterEffect();
 
-                    if (isMegaThrusting && ps.gameObject.CompareTag("megaThrust"))
-                    {
-                    //    ps.Emit(1);
-                  //      ps.transform.rotation =
-                   //         clientsPlayer.transform.rotation * Quaternion.AngleAxis(90, Vector3.forward);
-                    }
-                }
             }
-
         }
-        
+
         if (Input.GetKey((KeyCode.E)))
         {
             Game.Avatar.ApplyBreak();
         }
-        // test code
-//        if (Input.GetKey(KeyCode.S))
-//        {
-//            DoSpawnBullet(clientsPlayer.transform.position, clientsPlayer.transform.forward.x,
-//                clientsPlayer.transform.forward.z);
-//        }
-
-
-//        if (avatarVelocity.sqrMagnitude > currMaxVelSq)
-//        {
-//            avatarVelocity = avatarVelocity.normalized * currMaxVel;
-//        }
-
 
         // for some reason, a German keyboard's '+' will result in a Equals key. Anywhere else, this should be '+', too. I hope.
         if (Input.GetKey(KeyCode.RightBracket))
@@ -1146,7 +1130,38 @@ public class RunBehaviour : MonoBehaviour, IGameListener
             }
         }
     }
-    
+
+    private void DoThrusterEffect()
+    {
+        ParticleSystem[] psystems = clientsPlayer.GetComponentsInChildren<ParticleSystem>();
+        clientsPlayer.ApplyGridForce(moveForce, moveForceRadius);
+        foreach (ParticleSystem ps in psystems)
+        {
+            if (ps.gameObject.CompareTag("engineThrust"))
+            {
+                ps.transform.rotation =
+                    clientsPlayer.transform.rotation * Quaternion.AngleAxis(180, Vector3.up);
+                if (isMegaThrusting)
+                {
+                    ps.startColor = new Color(.2f,.4f,1,1);
+                    ps.Emit(3);
+                }
+                else
+                {
+                    ps.startColor = Color.yellow;
+                    ps.Emit(1);
+                }
+
+            }
+            if (isMegaThrusting && ps.gameObject.CompareTag("megaThrust"))
+            {
+                //   ps.Emit(1);
+                //        ps.transform.rotation =
+                //           clientsPlayer.transform.rotation * Quaternion.AngleAxis(-90, Vector3.forward);
+            }
+        }
+    }
+        
     public void OnLaserFired(ItemBehaviour ib)
     {
         Debug.Log("Laser Fired operation received for " + ib.item.Id);
@@ -1155,16 +1170,17 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         {
             ib.laserTimeLeft = ib.mlaserTimeLeft;
             Debug.Log("lasr adv");
-            MeshRenderer[] mrs = ib.GetComponentsInChildren<MeshRenderer>();
-            foreach (MeshRenderer mr in mrs)
-            {
-                if (mr.gameObject.tag == "laser")
-                {
-                    Debug.Log("lasr adv enable");
-                    mr.enabled = true;
-                    break;
-                }
-            }
+            ib.laserObject.GetComponent<MeshRenderer>().enabled = true;
+//            MeshRenderer[] mrs = ib.GetComponentsInChildren<MeshRenderer>();
+//            foreach (MeshRenderer mr in mrs)
+//            {
+//                if (mr.gameObject.tag == "laser")
+//                {
+//                    Debug.Log("lasr adv enable");
+//                    mr.enabled = true;
+//                    break;
+//                }
+//            }
         }
     }
 
@@ -1177,16 +1193,17 @@ public class RunBehaviour : MonoBehaviour, IGameListener
             audioSource.PlayOneShot(saberSound,1f);
             ib.saberTimeLeft = ib.msaberTimeLeft;
             Debug.Log("saber adv");
-            MeshRenderer[] mrs = ib.GetComponentsInChildren<MeshRenderer>();
-            foreach (MeshRenderer mr in mrs)
-            {
-                if (mr.gameObject.tag == "saber")
-                {
-                    Debug.Log("saber enabled");
-                    mr.enabled = true;
-                    break;
-                }
-            }
+            ib.saberObject.GetComponent<MeshRenderer>().enabled = true;
+//            MeshRenderer[] mrs = ib.GetComponentsInChildren<MeshRenderer>();
+//            foreach (MeshRenderer mr in mrs)
+//            {
+//                if (mr.gameObject.tag == "saber")
+//                {
+//                    Debug.Log("saber enabled");
+//                    mr.enabled = true;
+//                    break;
+//                }
+//            }
         }
     }
 

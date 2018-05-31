@@ -319,7 +319,8 @@ MonoBehaviour:
   saberTimeLeft: 0
   isThirdPerson: 0
   isSuperFast: 0
-  IsWASDfirst: 0
+  IsWASDfirst: 1
+  laserObject: {fileID: 0}
 --- !u!114 &11497700
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -709,13 +710,13 @@ Transform:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1948036931108308}
-  m_LocalRotation: {x: -0, y: -0.7071068, z: 0.7071068, w: 0}
-  m_LocalPosition: {x: 0, y: -0.1, z: 32.9}
-  m_LocalScale: {x: 0.4000001, y: -31.230661, z: 0.40000024}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -4.45, z: 71.2}
+  m_LocalScale: {x: 0.3999933, y: 1.5464048, z: 37.392117}
   m_Children: []
   m_Father: {fileID: 487220}
   m_RootOrder: 8
-  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &4035460172104606
 Transform:
   m_ObjectHideFlags: 1
@@ -891,7 +892,7 @@ MeshRenderer:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1948036931108308}
-  m_Enabled: 0
+  m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -1205,7 +1206,7 @@ CapsuleCollider:
   m_Enabled: 1
   m_Radius: 0.5
   m_Height: 2
-  m_Direction: 1
+  m_Direction: 2
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!198 &198100147438691580
 ParticleSystem:
@@ -14603,7 +14604,7 @@ ParticleSystem:
   moveWithTransform: 0
   moveWithCustomTransform: {fileID: 0}
   scalingMode: 2
-  randomSeed: -2141520304
+  randomSeed: 871104649
   InitialModule:
     serializedVersion: 3
     enabled: 1

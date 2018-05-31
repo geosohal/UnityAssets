@@ -11,6 +11,7 @@ public class BotBehaviour : MonoBehaviour {
 	
 	protected float lastMoveUpdateTime;
 	protected Vector3 lastMoveUpdate;
+	protected Vector3 lastRotation;
 	private float timeBetweenUpdates; // time for updates from server
 	private int maxHealth = 30;
 	private int currHealth;
@@ -56,6 +57,13 @@ public class BotBehaviour : MonoBehaviour {
 		{
 			// Debug.Log("move lerp: " + newPos);
 			transform.position = Vector3.Lerp(transform.position, newPos, lerpT);
+			
+			Vector3 currRot = new Vector3(item.Rotation.X, 0, item.Rotation.Y);
+			if (currRot != lastRotation)
+			{
+				lastRotation = currRot;
+				transform.rotation = Quaternion.LookRotation(currRot);
+			}
 		}
 	}
 	
