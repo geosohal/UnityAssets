@@ -52,7 +52,7 @@ public class VectorGrid : MonoBehaviour
 	// colors and widths. These values control the color, width, and how frequently
 	// thick lines appear vs. thin ones
 	public Color m_ThickLineSpawnColor = Color.green;
-	public Color m_ThinLineSpawnColor = new Color(1.0f, 1.0f, 1.0f, 0.5f);
+	public Color m_ThinLineSpawnColor = new Color(1.0f, 1.0f, 1.0f, 0.05f);
 	public float m_ThickLineWidth = 0.1f;
 	public float m_ThinLineWidth = 0.05f;
 	public int m_ThickLineSpacingX = 6;
@@ -151,6 +151,8 @@ public class VectorGrid : MonoBehaviour
 	/// </summary>
 	public void InitGrid()
 	{
+//			m_ThickLineSpawnColor = Color.green;
+//	m_ThinLineSpawnColor = new Color(1.0f, 1.0f, 1.0f, 0.05f);
 		m_ThickLineSpacingX = Mathf.Max(m_ThickLineSpacingX, 1);
 		m_ThickLineSpacingY = Mathf.Max(m_ThickLineSpacingY, 1);
 
@@ -678,7 +680,7 @@ public class VectorGrid : MonoBehaviour
 	/// <summary>
 	/// Add a grid force at the given position, extending in a sphere around the point
 	/// </summary>
-	public void AddGridForce(Vector3 worldPosition, float force, float radius, Color color, bool hasColor)
+	public void AddGridForce(Vector3 worldPosition, float force, float radius, Color color, bool hasColor, bool accumAlpha)
 	{
 		if(m_VectorGridPoints != null)
 		{
@@ -709,7 +711,10 @@ public class VectorGrid : MonoBehaviour
 							
 							// Grid forces should only affect RGB, not alpha channel
                             newColor = gridPoint.m_TargetColor + ((color - gridPoint.m_TargetColor) * distanceFactor);
-							newColor.a = alpha;
+							if (accumAlpha)
+							{
+								newColor.a = newColor.a + color.a * .1f;
+							}
 
                             gridPoint.m_TargetColor = newColor;
 						}
@@ -722,7 +727,7 @@ public class VectorGrid : MonoBehaviour
 	/// <summary>
 	/// Add a grid force at the given position, pushing all grid points in the given radius in the given direction
 	/// </summary>
-	public void AddGridForce(Vector3 worldPosition, Vector3 force, float radius, Color color, bool hasColor)
+	public void AddGridForce(Vector3 worldPosition, Vector3 force, float radius, Color color, bool hasColor, bool accumAlpha)
 	{
 		if(m_VectorGridPoints != null)
 		{
@@ -751,7 +756,12 @@ public class VectorGrid : MonoBehaviour
 							
 							// Grid forces should only affect RGB, not alpha channel
                             newColor = gridPoint.m_TargetColor + ((color - gridPoint.m_TargetColor) * distanceFactor);
-							newColor.a = alpha;
+
+							if (accumAlpha)
+							{
+								newColor.a = newColor.a + color.a * .1f;
+							}
+							//newColor.a = alpha;
 
                             gridPoint.m_TargetColor = newColor;
 						}

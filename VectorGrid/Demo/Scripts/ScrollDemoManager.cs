@@ -35,7 +35,7 @@ public class ScrollDemoManager : MonoBehaviour
 			Ray screenRay = Camera.main.ScreenPointToRay(Input.mousePosition);
 			Vector3 worldPosition = screenRay.GetPoint(m_VectorGrid.transform.position.z - Camera.main.transform.position.z);
 			worldPosition.z = m_VectorGrid.transform.position.z;
-			m_VectorGrid.AddGridForce(worldPosition, m_ExplosiveForce * 0.1f, m_ForceRadius, color, true);
+			m_VectorGrid.AddGridForce(worldPosition, m_ExplosiveForce * 0.1f, m_ForceRadius, color, true, false);
 		}
 		
 		if(m_RandomiseColor)

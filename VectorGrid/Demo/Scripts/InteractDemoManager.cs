@@ -39,14 +39,14 @@ public class InteractDemoManager : MonoBehaviour
 				Ray screenRay = Camera.main.ScreenPointToRay(Input.mousePosition);
 				Vector3 worldPosition = screenRay.GetPoint(m_VectorGrid.transform.position.z - Camera.main.transform.position.z);
 				worldPosition.z = m_VectorGrid.transform.position.z;
-				m_VectorGrid.AddGridForce(worldPosition, m_ExplosiveForce * 0.1f, m_ForceRadius, color, true);
+				m_VectorGrid.AddGridForce(worldPosition, m_ExplosiveForce * 0.1f, m_ForceRadius, color, true, false);
 			}
 			else if(Input.GetMouseButton(1) || (Input.GetMouseButton(0) && modifierPressed))
 			{
 				Ray screenRay = Camera.main.ScreenPointToRay(Input.mousePosition);
 				Vector3 worldPosition = screenRay.GetPoint(m_VectorGrid.transform.position.z - Camera.main.transform.position.z);
 				worldPosition.z = m_VectorGrid.transform.position.z;
-				m_VectorGrid.AddGridForce(worldPosition, -m_ImplosiveForce * 0.1f, m_ForceRadius, color, true);
+				m_VectorGrid.AddGridForce(worldPosition, -m_ImplosiveForce * 0.1f, m_ForceRadius, color, true, false);
 			}
 		}
 

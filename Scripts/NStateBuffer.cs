@@ -39,7 +39,11 @@ public class NStateBuffer
             posSetCount++;
         posBuffer[currBufferIndex] = ns;
     }
-    
+
+    public Vector3 GetLatestPosition()
+    {
+        return posBuffer[currBufferIndex].pos;
+    }
             // get position, from buffer, that goes back to the timestamp totalms
     public Vector3 GetRewindedPos(float totalms)
     {

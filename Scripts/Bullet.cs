@@ -23,6 +23,7 @@ public class Bullet : MonoBehaviour
 	
 	private GameObject vectorGrid;
 	private VectorGrid gridComponent;
+	private Vector2 velocityEstimate; // estimate of velocity used for grid force
 	
 	// Use this for initialization
 	void Start () {
@@ -39,6 +40,7 @@ public class Bullet : MonoBehaviour
 		
 		vectorGrid = GameObject.FindWithTag("vectorgrid");
 		gridComponent = vectorGrid.GetComponentInChildren<VectorGrid>();
+		velocityEstimate = new Vector2(item.Rotation.X, item.Rotation.Y)*2f;
 	}
 	
 	// Update is called once per frame
@@ -69,9 +71,9 @@ public class Bullet : MonoBehaviour
 			this.lastMoveUpdateTime = Time.time;
 			
 			nbuffer.AddNetworkState(newPos,lastMoveUpdateTime);
-			if (nbuffer.posSetCount > 2)
+			if (nbuffer.posSetCount > 0)
 				Show(true);
-			ApplyGridForce(.7f,7);
+			ApplyGridForce(velocityEstimate,5);
 		}
 		
 		transform.position =  nbuffer.GetRewindedPos(Time.time - .1f);
@@ -91,8 +93,18 @@ public class Bullet : MonoBehaviour
 	public void ApplyGridForce(float force, float radius)
 	{
 		if (vectorGrid != null)
-			gridComponent.AddGridForce(this.transform.position, force, radius, Color.cyan, true);
+			gridComponent.AddGridForce(this.transform.position, force, radius, Color.red, true, false);
 	}
+	public void ApplyGridForce(Vector2 force, float radius)
+	{
+		if (vectorGrid != null)
+		{
+			Color alphared = Color.red;
+			alphared.a = .2f;
+			gridComponent.AddGridForce(this.transform.position, force, radius, alphared, true, true);
+		}
+	}
+
 
 
 	private void OnCollisionEnter2D(Collision2D collision)

@@ -11,10 +11,10 @@ using System;
 using Photon.MmoDemo.Client;
 using Photon.MmoDemo.Common;
 using UnityEngine;
-using UnityEngine.Assertions.Must;
+//using UnityEngine.Assertions.Must;
 using UnityEngine.UI;
-using UnityEngine.XR.WSA.Sharing;
-using Object = UnityEngine.Object;
+//using UnityEngine.XR.WSA.Sharing;
+//using Object = UnityEngine.Object;
 
 // a snapshot of values received over the network
 //public struct NetworkState
@@ -156,7 +156,37 @@ public class ItemBehaviour : MonoBehaviour
     public void ApplyGridForce(float force, float radius)
     {
         if (vectorGrid != null)
-            gridComponent.AddGridForce(this.transform.position, force, radius, Color.yellow, true);
+        {
+            Color alphayellow = Color.yellow;
+            alphayellow.a = .5f;
+            gridComponent.AddGridForce(nbuffer.GetLatestPosition(), force, radius, alphayellow, true, true);
+        }
+    }
+    
+    public void ApplyGridForce(float force, float radius, Vector2 offset, Color? forceCol)
+    {
+        if (vectorGrid != null)
+        {
+            Vector3 offset3 = new Vector3(offset.x, 0, offset.y);
+            if (forceCol == null)
+            {
+                Color alphayellow = Color.yellow;
+                alphayellow.a = .5f;
+                gridComponent.AddGridForce(nbuffer.GetLatestPosition() + offset3, force, radius, alphayellow, true, false);
+            }
+            else
+            {
+                gridComponent.AddGridForce(nbuffer.GetLatestPosition() + offset3, force, radius, (Color)forceCol, true, false);
+            }
+        }
+    }
+    
+    
+    
+    public void ApplyGridForce(Vector2 force, float radius)
+    {
+        if (vectorGrid != null)
+            gridComponent.AddGridForce(nbuffer.GetLatestPosition(), force, radius, Color.yellow, true, true);
     }
 
     public Vector GetMouseForward()
@@ -256,7 +286,7 @@ public class ItemBehaviour : MonoBehaviour
             {
                 if (timeSinceShot > waitTime)
                 {
-                    Debug.Log("wireball TEST " + wireBall.enabled.ToString());
+       //             Debug.Log("wireball TEST " + wireBall.enabled.ToString());
                     Shoot();
                     timeSinceShot = 0;
                 }
@@ -570,6 +600,8 @@ public class ItemBehaviour : MonoBehaviour
         {
             saberObject.transform.rotation = Quaternion.LookRotation(fwdByMouse, Vector3.up);
             saberObject.transform.position = this.transform.position + fwdByMouse*2f ;
+            
+            ApplyGridForce(4f, 13f, new Vector2(fwdByMouse.x, fwdByMouse.z)*6f,Color.cyan );
         }
     }
 

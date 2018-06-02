@@ -119,7 +119,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     private bool wasTeleported = false;
 
     private bool isBursting;
-    private int timeToIncreaseView = 18;
+    private int timeToIncreaseView = 6;
     
     private float hudTime;    // make shift hud vars
     private float timeToFadehud = 1.5f;
@@ -596,7 +596,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         if (bb == null)
             bb = newbot.AddComponent(typeof (BotBehaviour)) as BotBehaviour;
         bb.Initialize(this.Game, bot, this.ItemObjectName(bot), null, true);
-        
+        botTable.Add(bot.Id, bb);
         Debug.Log("made mother bot on client");
     }
 
@@ -633,6 +633,8 @@ public class RunBehaviour : MonoBehaviour, IGameListener
                 CreateBullet(item);
             else if (item.Id.StartsWith("bo"))
                 CreateBot(item);
+            else if (item.Id.StartsWith("bf"))
+                CreateFastBot(item);
             else if (item.Id.StartsWith("mb"))
                 CreateMotherMob(item);
             else if (item.Id.StartsWith("zz"))
@@ -714,7 +716,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
             Debug.Log("removing bot" + objName + " aka" + item.Id);
             if (botTable.ContainsKey(item.Id))
             {
-                if (item.Id.StartsWith("bo"))
+                if (item.Id.StartsWith("bo") || item.Id.StartsWith("bf"))
                     OnShipExplosion(item.Position);
                 else if (item.Id.StartsWith("mob"))
                     OnShipExplosionBig(item.Position);
@@ -1076,6 +1078,10 @@ public class RunBehaviour : MonoBehaviour, IGameListener
             
             if (isThrusting)
                 DoThrusterEffect();
+          //  else
+            {
+                clientsPlayer.ApplyGridForce(moveForce, moveForceRadius/2, avatarVelocity/2f, null);
+            }
         }
         else if (controlsType == ControlsType.DirectionFirst)
         {
@@ -1134,7 +1140,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     private void DoThrusterEffect()
     {
         ParticleSystem[] psystems = clientsPlayer.GetComponentsInChildren<ParticleSystem>();
-        clientsPlayer.ApplyGridForce(moveForce, moveForceRadius);
+       // clientsPlayer.ApplyGridForce(avatarVelocity/5f, moveForceRadius/2f);
         foreach (ParticleSystem ps in psystems)
         {
             if (ps.gameObject.CompareTag("engineThrust"))
@@ -1214,7 +1220,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
             clientsPlayer.TakeDamageAndUpdateBar(hpChange);
         else
         {
-            if (itemId.StartsWith("bo"))    // if we're decrementing a bots hp
+            if (itemId.StartsWith("bo") || itemId.StartsWith("bf"))    // if we're decrementing a bots hp
             {
                 audioSource.PlayOneShot(shipHitSound, .4f);
                 botTable[itemId].TakeDamage((hpChange));

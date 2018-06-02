@@ -9,15 +9,17 @@ public class BotBehaviour : MonoBehaviour {
 
 	public Item item;
 	
-	protected float lastMoveUpdateTime;
-	protected Vector3 lastMoveUpdate;
-	protected Vector3 lastRotation;
+	private float lastMoveUpdateTime;
+	private Vector3 lastMoveUpdate;
+	private Vector3 lastRotation;
 	private float timeBetweenUpdates; // time for updates from server
-	private int maxHealth = 30;
+	private int maxHealth = 660;
 	private int currHealth;
 	public SimpleHealthBar healthBar;
-	private bool isMother;
-
+	private bool isMother;	
+	public static int pbuffsize = 80;
+	private NStateBuffer nbuffer;
+	private Canvas guiCanvas;
 
 	public void Initialize(Game mmoGame, Item botItem, string name, Radar worldRadar, bool isMother)
 	{
@@ -28,6 +30,14 @@ public class BotBehaviour : MonoBehaviour {
 		                     RunBehaviour.WorldToUnityFactor;
 		timeBetweenUpdates = .05f;
 		currHealth = maxHealth;
+		nbuffer = new NStateBuffer(pbuffsize);
+		
+		healthBar = GetComponentInChildren<SimpleHealthBar>();
+		if (isMother)
+		{
+			guiCanvas = GameObject.FindGameObjectWithTag("gui").GetComponentInChildren<Canvas>();
+			healthBar.transform.parent = guiCanvas.transform;
+		}		
 	}
 
 	// Use this for initialization
@@ -40,24 +50,12 @@ public class BotBehaviour : MonoBehaviour {
 		Vector3 newPos = new Vector3(this.item.Position.X, transform.position.y, this.item.Position.Y) *
 		                 RunBehaviour.WorldToUnityFactor;
 
-
-
 		if (newPos != this.lastMoveUpdate)
 		{
 			this.lastMoveUpdate = newPos;
 			this.lastMoveUpdateTime = Time.time;
-		}
-
-		// healthBar.UpdateBar(currHealth, maxHealth);
-
-		// move smoothly
-		float lerpT = (Time.time - this.lastMoveUpdateTime) / timeBetweenUpdates;
-		
-		if (newPos != transform.position)
-		{
-			// Debug.Log("move lerp: " + newPos);
-			transform.position = Vector3.Lerp(transform.position, newPos, lerpT);
 			
+			nbuffer.AddNetworkState(newPos,Time.time);
 			Vector3 currRot = new Vector3(item.Rotation.X, 0, item.Rotation.Y);
 			if (currRot != lastRotation)
 			{
@@ -65,13 +63,18 @@ public class BotBehaviour : MonoBehaviour {
 				transform.rotation = Quaternion.LookRotation(currRot);
 			}
 		}
+
+		// healthBar.UpdateBar(currHealth, maxHealth);
+
+		transform.position =  nbuffer.GetRewindedPos(Time.time - .1f);
 	}
 	
 	public void TakeDamage(int amount)
 	{
 		//Debug.Log(("bot taking dmg " + amount.ToString()));
 		currHealth -= amount;
-		healthBar.UpdateBar(currHealth, maxHealth);
+		if (isMother)
+			healthBar.UpdateBar(currHealth, maxHealth);
 		FlySparks();
 	}
 	

@@ -18,11 +18,11 @@ public class VectorGridForce : MonoBehaviour
 		{
 			if(m_Directional)
 			{
-				m_VectorGrid.AddGridForce(this.transform.position, m_ForceDirection * m_ForceScale, m_Radius, m_Color, m_HasColor);
+				m_VectorGrid.AddGridForce(this.transform.position, m_ForceDirection * m_ForceScale, m_Radius, m_Color, m_HasColor, true);
 			}
 			else
 			{
-				m_VectorGrid.AddGridForce(this.transform.position, m_ForceScale, m_Radius, m_Color, m_HasColor);
+				m_VectorGrid.AddGridForce(this.transform.position, m_ForceScale, m_Radius, m_Color, m_HasColor, false);
 			}
 		}
 	}
