@@ -1227,7 +1227,8 @@ public class RunBehaviour : MonoBehaviour, IGameListener
             }
             else if (itemId.StartsWith("mb"))
             {
-                audioSource.PlayOneShot(shipHitSoundM, .5f);
+                if (hpChange > 0)   // only play damage sound when hp is set to decrease, otherwise it is just regenerating hp
+                    audioSource.PlayOneShot(shipHitSoundM, .5f);
                 botTable[itemId].TakeDamage((hpChange));
             }
             else// decrement a players hp
