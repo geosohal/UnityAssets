@@ -281,7 +281,8 @@ public class StationNode : MonoBehaviour {
     }
 
     // user of function ensures that correct bridge type is used for the building
-    public bool BuildBridgeOnSelectedHub(Direction dir, HorizontalBuildingType connectedNodeType)
+    public bool BuildBridgeOnSelectedHub(Direction dir, HorizontalBuildingType connectedNodeType, ref TurretSlot slot1,
+        ref TurretSlot slot2)
     {
         if (selectedHub.IsPortUsed(dir))
             return false;
@@ -290,11 +291,22 @@ public class StationNode : MonoBehaviour {
         newBridge.dir = dir;
         newBridge.btype = connectedNodeType;
         newBridge.mesh = MakeBridgeGOInstance(connectedNodeType);
-        newBridge.mesh.transform.position = GetBridgePosFromPort(dir, connectedNodeType);
+        Vector3 bridgePos = GetBridgePosFromPort(dir, connectedNodeType);
+        newBridge.mesh.transform.position = bridgePos;
         if (dir == Direction.North || dir == Direction.South)
+        {
+            slot1.pos = bridgePos - new Vector3(0,-12,(GetBridgeLenByType(connectedNodeType) / 2f - 12f));
+            slot2.pos = bridgePos + new Vector3(0, 12, (GetBridgeLenByType(connectedNodeType) / 2f - 12f));
             newBridge.mesh.transform.rotation = Quaternion.Euler(180, 90, 90);
+        }
         else
+        {
+            slot1.pos = bridgePos - new Vector3((GetBridgeLenByType(connectedNodeType) / 2f - 12f), -12,0);
+            slot2.pos = bridgePos + new Vector3((GetBridgeLenByType(connectedNodeType) / 2f - 12f), 12,0);
             newBridge.mesh.transform.rotation = Quaternion.Euler(180, 0, 90);
+        }
+        slot1.associatedBridge = newBridge;
+        slot2.associatedBridge = newBridge;
         selectedHub.portsUsed.Add( newBridge );
         return true;
     }
@@ -318,14 +330,19 @@ public class StationNode : MonoBehaviour {
         return Vector3.zero;
     }
 
+    public float GetBridgeLenByType(HorizontalBuildingType btype)
+    {
+        if (btype == HorizontalBuildingType.LargeBridge || btype == HorizontalBuildingType.SmallBridge)
+            return SpaceStation.smBridgeLength;
+        else if (btype == HorizontalBuildingType.SmallBridgeDouble || btype == HorizontalBuildingType.LargeBridgeDouble)
+            return SpaceStation.bigBridgeLength;
+
+        return 0;
+    }
     public Vector3 GetBridgePosFromPort(Direction dir, HorizontalBuildingType btype)
     {
-        float bridgeLen;
-        if (btype == HorizontalBuildingType.LargeBridge || btype == HorizontalBuildingType.SmallBridge)
-            bridgeLen = SpaceStation.smBridgeLength;
-        else if (btype == HorizontalBuildingType.SmallBridgeDouble || btype == HorizontalBuildingType.LargeBridgeDouble)
-            bridgeLen = SpaceStation.bigBridgeLength;
-        else //if (hBuildingType == HorizontalBuildingType.Turret)
+        float bridgeLen = GetBridgeLenByType(btype);
+        if (bridgeLen == 0)
             return Vector3.zero;
 
         Vector3 ans = Vector3.zero;

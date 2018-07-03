@@ -101,7 +101,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     private Vector? lastMovePosition;
     private Vector? lastRotation;
     private Vector lastRotStored;
-    private Vector2 avatarVelocity;
+    private Vector2 avatarVelocity; // actually is delta velocity per frame
     private float nextMoveTime;
     private float nextRotTime;
     private GameObject actorGo;
@@ -151,6 +151,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     public float moveForceRadius;
     public float moveForce;
 
+    public bool isBuildMode;
     public Game Game
     {
         get { return this.game; }
@@ -205,6 +206,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
 
         audioSource = GetComponent<AudioSource>();
         isFirstUpdate = true;
+        isBuildMode = false;
     }
 
     public void Start()
@@ -285,82 +287,84 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         {
             // send queued velocity 20 times/sec
             SendVelocityRot();
-            
 
-            ReadKeyboardInput(elapsedSec);
-            
-            // update special abilities and activate if their key is pressed
-            foreach (SpecialAbility sa in abilities)
+            if (!isBuildMode)
             {
-                sa.UpdateTimer(elapsedSec);
-                if (sa.IsChargedAndKeyPressed() && currMP > sa.mpCost)
+                ReadKeyboardInput(elapsedSec);
+
+                // update special abilities and activate if their key is pressed
+                foreach (SpecialAbility sa in abilities)
                 {
-                    currMP -= sa.mpCost;
-                    sa.ResetChargeTimer();
-                    switch (sa.specialType)
+                    sa.UpdateTimer(elapsedSec);
+                    if (sa.IsChargedAndKeyPressed() && currMP > sa.mpCost)
                     {
-                        case SpecialAbility.SpecialType.Teleport:
-                            Ray ray = UnityEngine.Camera.main.ScreenPointToRay(Input.mousePosition);
-                            RaycastHit hit;
-                            
-                            // play teleport out effect
-                            GameObject neweffect = Instantiate(TpOutEffect, clientsPlayer.transform.position, Quaternion.identity);
-                            Expirableffects.Add(new Tuple<GameObject, float>(neweffect, timeToDestroyExpirableEffect));
-                            
-                            MoveActorToMousePosition();
-                            if (this.lastRotation.HasValue)
-                                Game.Avatar.MoveAbsolute(this.lastMovePosition.Value, (Vector)this.lastRotation);
-                            else
-                                Game.Avatar.MoveAbsolute(this.lastMovePosition.Value, Game.Avatar.Rotation);
+                        currMP -= sa.mpCost;
+                        sa.ResetChargeTimer();
+                        switch (sa.specialType)
+                        {
+                            case SpecialAbility.SpecialType.Teleport:
+                                Ray ray = UnityEngine.Camera.main.ScreenPointToRay(Input.mousePosition);
+                                RaycastHit hit;
 
-                            wasTeleported = true;
-                            
-                            // play teleport in effect
-                            
-                            Vector3 newPos = new Vector3(lastMovePosition.Value.X, 0, lastMovePosition.Value.Y)*WorldToUnityFactor;
+                                // play teleport out effect
+                                GameObject neweffect = Instantiate(TpOutEffect, clientsPlayer.transform.position, Quaternion.identity);
+                                Expirableffects.Add(new Tuple<GameObject, float>(neweffect, timeToDestroyExpirableEffect));
 
-                            GameObject effect = Instantiate(TpInEffect, newPos, Quaternion.identity);
-                            effect.name = "Foll"; // set effect to follow player pos
-                            Expirableffects.Add(new Tuple<GameObject, float>(effect, timeToDestroyExpirableEffect));;
-                            break;
-                        
-                        case SpecialAbility.SpecialType.Burst:
-                            Game.Avatar.ApplyBurst();
-                            GameObject burst = Instantiate(BurstPrefab, clientsPlayer.transform.position, 
-                                clientsPlayer.transform.rotation);
-                            burst.transform.localScale = new Vector3(2f,2f,2f);
-                            Expirableffects.Add(new Tuple<GameObject, float>(burst, timeToDestroyExpirableEffect));
-                            break;
-                        case SpecialAbility.SpecialType.Saber:
-                            Game.Avatar.FireSaber();
-                            break;
-                        case SpecialAbility.SpecialType.Laser:
-                            Game.Avatar.FireLaser();
-                            break;
-                        case SpecialAbility.SpecialType.Bomb:
-                            if (controlsType == ControlsType.DirectionFirst)
-                                Game.Avatar.LaunchBomb(new Vector(clientsPlayer.transform.forward.x, clientsPlayer.transform.forward.z));
-                            else if (controlsType == ControlsType.WasdFirst)
-                                Game.Avatar.LaunchBomb(clientsPlayer.GetMouseForward());
-                            break;
-                        case SpecialAbility.SpecialType.BallMode:
-                            if (!clientsPlayer.isSuperFast)
-                            {
-                                clientsPlayer.ToggleWireBall();
-                                Game.Avatar.StartSuperFast();
-                                Vector3 nextPos = clientsPlayer.transform.position;
-                                GameObject balleffect = Instantiate(BallModeStartEffect, nextPos, Quaternion.identity);
-                                balleffect.name = "Foll"; // set effect to follow player pos
-                                Expirableffects.Add(new Tuple<GameObject, float>(balleffect,
-                                    timeToDestroyExpirableEffect));
-                            }
-                            else
-                            {
-                                Game.Avatar.EndSuperFast();
-                                clientsPlayer.ToggleWireBall();
-                            }
+                                MoveActorToMousePosition();
+                                if (this.lastRotation.HasValue)
+                                    Game.Avatar.MoveAbsolute(this.lastMovePosition.Value, (Vector)this.lastRotation);
+                                else
+                                    Game.Avatar.MoveAbsolute(this.lastMovePosition.Value, Game.Avatar.Rotation);
 
-                            break;
+                                wasTeleported = true;
+
+                                // play teleport in effect
+
+                                Vector3 newPos = new Vector3(lastMovePosition.Value.X, 0, lastMovePosition.Value.Y) * WorldToUnityFactor;
+
+                                GameObject effect = Instantiate(TpInEffect, newPos, Quaternion.identity);
+                                effect.name = "Foll"; // set effect to follow player pos
+                                Expirableffects.Add(new Tuple<GameObject, float>(effect, timeToDestroyExpirableEffect)); ;
+                                break;
+
+                            case SpecialAbility.SpecialType.Burst:
+                                Game.Avatar.ApplyBurst();
+                                GameObject burst = Instantiate(BurstPrefab, clientsPlayer.transform.position,
+                                    clientsPlayer.transform.rotation);
+                                burst.transform.localScale = new Vector3(2f, 2f, 2f);
+                                Expirableffects.Add(new Tuple<GameObject, float>(burst, timeToDestroyExpirableEffect));
+                                break;
+                            case SpecialAbility.SpecialType.Saber:
+                                Game.Avatar.FireSaber();
+                                break;
+                            case SpecialAbility.SpecialType.Laser:
+                                Game.Avatar.FireLaser();
+                                break;
+                            case SpecialAbility.SpecialType.Bomb:
+                                if (controlsType == ControlsType.DirectionFirst)
+                                    Game.Avatar.LaunchBomb(new Vector(clientsPlayer.transform.forward.x, clientsPlayer.transform.forward.z));
+                                else if (controlsType == ControlsType.WasdFirst)
+                                    Game.Avatar.LaunchBomb(clientsPlayer.GetMouseForward());
+                                break;
+                            case SpecialAbility.SpecialType.BallMode:
+                                if (!clientsPlayer.isSuperFast)
+                                {
+                                    clientsPlayer.ToggleWireBall();
+                                    Game.Avatar.StartSuperFast();
+                                    Vector3 nextPos = clientsPlayer.transform.position;
+                                    GameObject balleffect = Instantiate(BallModeStartEffect, nextPos, Quaternion.identity);
+                                    balleffect.name = "Foll"; // set effect to follow player pos
+                                    Expirableffects.Add(new Tuple<GameObject, float>(balleffect,
+                                        timeToDestroyExpirableEffect));
+                                }
+                                else
+                                {
+                                    Game.Avatar.EndSuperFast();
+                                    clientsPlayer.ToggleWireBall();
+                                }
+
+                                break;
+                        }
                     }
                 }
             }
@@ -1280,6 +1284,17 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     {
         Radar r = GetComponent<Radar>();
         r.OnRadarUpdate(itemId, itemType, position);
+    }
+
+    public void SetBuildMode(bool val)
+    {
+        isBuildMode = val;
+        clientsPlayer.isBuildMode = val;
+        if (isBuildMode)
+        {
+            //Game.Avatar.ApplyBreak();
+            avatarVelocity = -1f*new Vector2(((Vector)Game.Avatar.Velocity).X, ((Vector)Game.Avatar.Velocity).Y);
+        }
     }
     
     #region player initiated operations

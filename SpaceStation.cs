@@ -18,9 +18,28 @@ public enum HorizontalBuildingType
     LargeBridgeDouble,
     SmallBridge,
     SmallBridgeDouble,
-    Turret, // can only be built of main connectors at the base height
+   // Turret, // can only be built of main connectors at the base height
            //one design option is to allow them on main connectors of other heights but not now
     None
+}
+
+public class Turret
+{
+    public TurretSlot slot;
+    public GameObject gameObject;
+    // todo attack mode
+    // todo rof, etc
+
+    public Turret()
+    {
+        slot = null;
+    }
+
+    public Turret(TurretSlot owningSlot, GameObject obj)
+    {
+        slot = owningSlot;
+        gameObject = obj;
+    }
 }
 
 public class StationManager
@@ -54,6 +73,37 @@ public class StationManager
         if (btype == BuildingType.Room)
             residences.Add((Residence)building);
     }
+
+
+    public void ReportStationStatsToHUD()
+    {
+        Text text = GameObject.FindGameObjectWithTag("Hud").GetComponent<Text>();
+        string str = "PowerStations: " + powerStations.Count.ToString() + "\n" +
+            
+            "Shield Gens: " + shieldGens.Count.ToString() + "\n" +
+            "GreenHouses: " + greenHouses.Count.ToString() + "\n" +
+            "Residences: " + residences.Count.ToString() + "\n";
+        int count = 0;
+        int i = 1;
+        foreach (Residence house in residences)
+        {
+            str += "  House" + i.ToString() + ": " + house.population.ToString() + "\n";
+            count += house.population;
+            i++;
+        }
+        str += "Total Population: " + count.ToString();
+        text.text = str;
+    }
+
+    //public int GetPopulation()
+    //{
+    //    return 99;
+    //    //int count = 0;
+    //    //foreach (Residence house in residences)
+    //    //{
+    //    //    house.population
+    //    //}
+    //}
 
     public bool AddResidents(int amount)
     {
@@ -91,6 +141,28 @@ public class StationManager
     }
 }
 
+public class TurretSlot
+{
+    public PortBuilding associatedBridge;
+    // note above can be null and we could have an associated hub instead
+
+    public Vector3 pos;
+    public bool isOccupied;
+
+    public TurretSlot(PortBuilding bridge, Vector3 pos)
+    {
+        associatedBridge = bridge;
+        this.pos = pos;
+        isOccupied = false;
+    }
+
+    public TurretSlot()
+    {
+        this.pos = Vector3.zero;
+        isOccupied = false;
+    }
+}
+
 public class SpaceStation : MonoBehaviour {
 
     // set by unity:
@@ -116,8 +188,11 @@ public class SpaceStation : MonoBehaviour {
     public bool IsEmpty;
     private bool buildOnBottom; // if false then builder is set to build on top
     private Direction selectedDir;
-    StationManager stationMan;
-
+    public StationManager stationMan;
+    private GameObject newTurret;
+    private TurretSlot activatedSlot;
+    private List<TurretSlot> turretSlots;
+    private List<Turret> turrets;
 
     public SpaceStation()
     {
@@ -143,22 +218,14 @@ public class SpaceStation : MonoBehaviour {
         SetSelectedNode();
         IsEmpty = true;
         buildOnBottom = true;
+        newTurret = null;
+        turretSlots = new List<TurretSlot>();
+        activatedSlot = null;
+        turrets = new List<Turret>();
+    }
 
-        ((Button)GameObject.FindGameObjectWithTag("btnBigDisk").GetComponent<Button>()).interactable = false;
-        ((Button)GameObject.FindGameObjectWithTag("btnSmDisk").GetComponent<Button>()).interactable = false;
-        ((Button)GameObject.FindGameObjectWithTag("btnRoom").GetComponent<Button>()).interactable = false;
-        ((Button)GameObject.FindGameObjectWithTag("btnHub").GetComponent<Button>()).interactable = false;
-        ((Button)GameObject.FindGameObjectWithTag("btnNorth").GetComponent<Button>()).interactable = false;
-        ((Button)GameObject.FindGameObjectWithTag("btnEast").GetComponent<Button>()).interactable = false;
-        ((Button)GameObject.FindGameObjectWithTag("btnSouth").GetComponent<Button>()).interactable = false;
-        ((Button)GameObject.FindGameObjectWithTag("btnWest").GetComponent<Button>()).interactable = false;
-        ((Button)GameObject.FindGameObjectWithTag("btnBigLongBridge").GetComponent<Button>()).interactable = false;
-        ((Button)GameObject.FindGameObjectWithTag("btnThinLongBridge").GetComponent<Button>()).interactable = false;
-        ((Button)GameObject.FindGameObjectWithTag("btnThinBridge").GetComponent<Button>()).interactable = false;
-        ((Button)GameObject.FindGameObjectWithTag("btnBigBridge").GetComponent<Button>()).interactable = false;
-
-
-
+    public void InitializeButtons()
+    {
         ((Button)GameObject.FindGameObjectWithTag("btnHub").GetComponent<Button>()).onClick.AddListener(() => this.OnHubButton());
         ((Button)GameObject.FindGameObjectWithTag("btnBigDisk").GetComponent<Button>()).onClick.AddListener(() => this.OnTowerBuildingButton(BuildingType.Disk));
         ((Button)GameObject.FindGameObjectWithTag("btnSmDisk").GetComponent<Button>()).onClick.AddListener(() => this.OnTowerBuildingButton(BuildingType.SmallDisk));
@@ -178,8 +245,15 @@ public class SpaceStation : MonoBehaviour {
 
         ((Button)GameObject.FindGameObjectWithTag("btnUp").GetComponent<Button>()).onClick.AddListener(() => this.OnUpPress());
         ((Button)GameObject.FindGameObjectWithTag("btnDown").GetComponent<Button>()).onClick.AddListener(() => this.OnDownPress());
+
+        ((Button)GameObject.FindGameObjectWithTag("btnTurret").GetComponent<Button>()).onClick.AddListener(() => this.OnTurretButton());
     }
 
+    public void OnTurretButton()
+    {
+        newTurret = (GameObject)Instantiate(Resources.Load("Turret Repeater"));
+        ((Renderer)newTurret.GetComponentInChildren<Renderer>()).material.shader = Shader.Find("FORGE3D/Additive");
+    }
     public void CreateFirstHub(Vector3 pos)
     {
         //   StationNode newNode = new StationNode();
@@ -269,7 +343,10 @@ public class SpaceStation : MonoBehaviour {
             if (GetNodeInSelectedDir() == null)
                 stationGrid[currentStation.first + DirectionEastWest(selectedDir), currentStation.second + DirectionNorthSouth(selectedDir)] = new StationNode();
             GetNodeInSelectedDir().IsBridgeCovered = true;
-            selectedNode.BuildBridgeOnSelectedHub(selectedDir, bridgeType);
+            TurretSlot slot1 = new TurretSlot();
+            TurretSlot slot2 = new TurretSlot();
+            selectedNode.BuildBridgeOnSelectedHub(selectedDir, bridgeType, ref slot1, ref slot2);
+            turretSlots.Add(slot1); turretSlots.Add(slot2);
             bool isValidNode = true; ;
             StationNode connectingNode = GetNodeInDirection(selectedDir, 2, ref isValidNode );
             if (isValidNode && connectingNode == null) // node was in bounds and has not been constructed
@@ -279,9 +356,12 @@ public class SpaceStation : MonoBehaviour {
         }
         if (bridgeType == HorizontalBuildingType.LargeBridge || bridgeType == HorizontalBuildingType.SmallBridge)
         {
+            TurretSlot slot1 = new TurretSlot();
+            TurretSlot slot2 = new TurretSlot();
             if (GetNodeInSelectedDir() == null)
                 stationGrid[currentStation.first + DirectionEastWest(selectedDir), currentStation.second + DirectionNorthSouth(selectedDir)] = new StationNode();
-            selectedNode.BuildBridgeOnSelectedHub(selectedDir, bridgeType);
+            selectedNode.BuildBridgeOnSelectedHub(selectedDir, bridgeType, ref slot1, ref slot2);
+            turretSlots.Add(slot1); turretSlots.Add(slot2);
         }
 
         
@@ -554,6 +634,49 @@ public class SpaceStation : MonoBehaviour {
             SelectNeighborNode(Direction.West);
         if (Input.GetKeyDown(KeyCode.RightArrow))
             SelectNeighborNode(Direction.East);
+        if (Input.GetMouseButton(0) && newTurret != null && activatedSlot != null)
+        {
+            activatedSlot.isOccupied = true;
+            turretSlots.Remove(activatedSlot);
+            Turret turret = new Turret(activatedSlot, newTurret);
+            ((Renderer)newTurret.GetComponentInChildren<Renderer>()).material.shader = Shader.Find("Standard");
+            turrets.Add(turret);
+            newTurret = null;
+            activatedSlot = null;
+        }
+
+        if (newTurret != null) // user trying to place turret so update turret hologram position
+        {
+            Plane playerPlane = new Plane(Vector3.up, transform.position);
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            float hitDist = 0.0f;
+
+            if (playerPlane.Raycast(ray, out hitDist))
+            {
+                Vector3 targetPoint = ray.GetPoint(hitDist);
+                targetPoint.y = transform.position.y;
+                newTurret.transform.position = targetPoint;
+
+                {
+                    activatedSlot = null;
+                    // now check targetpoint against all known turret slots on bridges and snap into place and change
+                    // shader if it targetpoint is close enough to the slot
+                    foreach (TurretSlot slot in turretSlots)
+                    {
+                        if (!slot.isOccupied)
+                        {
+                            // check if slot is close enough
+                            if (Vector3.Distance(slot.pos, targetPoint) < 10f)
+                            {
+                                newTurret.transform.position = slot.pos;
+                                activatedSlot = slot;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public static bool IsHub(BuildingType type)

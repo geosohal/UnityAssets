@@ -93,6 +93,7 @@ public class ItemBehaviour : MonoBehaviour
 
     public GameObject laserObject;
     public GameObject saberObject;
+    public bool isBuildMode;
 
     public void Destroy()
     {
@@ -102,6 +103,7 @@ public class ItemBehaviour : MonoBehaviour
 
     public void Initialize(Game mmoGame, Item actorItem, string name, Radar worldRadar)
     {
+        isBuildMode = false;
         isSuperFast = false;
         this.item = actorItem;
         this.name = name;
@@ -205,6 +207,9 @@ public class ItemBehaviour : MonoBehaviour
             return;
         }
         float elapsedSec = Time.time - lastTime;
+        lastTime = Time.time;
+        if (isBuildMode)
+            return;
 
 
         lastPos = transform.position;
@@ -450,7 +455,7 @@ public class ItemBehaviour : MonoBehaviour
         
         displacement2Last2Frame = displacement2LastFrame;
         displacement2LastFrame = (transform.position - lastPos).sqrMagnitude;
-        lastTime = Time.time;
+        
     }
     // detect if other ship is using thrusters by if their velocity changed by a significant enough amount
     private bool SeemsToBeThrusting()
@@ -463,7 +468,7 @@ public class ItemBehaviour : MonoBehaviour
     public void RotateTowardsWASDDir(float elapsedSec)
     {
         float currAngle = transform.rotation.eulerAngles.y;
-        hudObj.GetComponent<Text>().text = currAngle.ToString();
+     //   hudObj.GetComponent<Text>().text = currAngle.ToString();
         bool? turnClockwise = null;
        // transform.rotation = Quaternion.LookRotation(newForward, Vector3.up)
         if (Input.GetKey(KeyCode.W) && Input.GetKey(KeyCode.A))
