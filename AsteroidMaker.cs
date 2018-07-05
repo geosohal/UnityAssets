@@ -13,16 +13,17 @@ public class AsteroidMaker : MonoBehaviour
 	public float speedVarianceY = .3f;
 	public float timeToMake = .6f;
 	public GameObject[] asteroids;
+    public float torqueRange = 1;
 
 	private float timeSinceLastMake = float.MaxValue;
-
+    RunBehaviour rb;
 	
 	
 	// Use this for initialization
 	void Start ()
 	{
-
-	}
+        rb = GameObject.FindGameObjectWithTag("GameController").GetComponent<RunBehaviour>();
+    }
 	
 	// Update is called once per frame
 	void Update ()
@@ -36,13 +37,16 @@ public class AsteroidMaker : MonoBehaviour
 
 			Transform asteroidTransform = this.transform;
 			Vector3 astPos = 
-				new Vector3(Random.RandomRange(-xradius, xradius), transform.position.y, transform.position.z);
+				new Vector3(transform.position.x + Random.RandomRange(-xradius, xradius), transform.position.y, transform.position.z);
 			GameObject newAsteroid = Instantiate(asteroids[randIndex], astPos, Quaternion.identity);
 			float xVel = speedX + Random.RandomRange(-speedVarianceX, speedVarianceX);
 			float yVel = speedY + Random.RandomRange(-speedVarianceY, speedVarianceY);
-			Vector2 asteroidVel =  new Vector2(xVel,yVel);
-			newAsteroid.GetComponent<Rigidbody2D>().velocity = asteroidVel;
+			Vector3 asteroidVel =  new Vector3(xVel,0,yVel);
+			newAsteroid.GetComponent<Rigidbody>().velocity = asteroidVel;
+            newAsteroid.GetComponent<Rigidbody>().AddTorque(
+                Random.RandomRange(-torqueRange, torqueRange), Random.RandomRange(-torqueRange, torqueRange), Random.RandomRange(-torqueRange, torqueRange));
 			timeSinceLastMake = 0;
+            rb.asteroids.Add(newAsteroid.GetComponent<Asteroid>());
 		}
 	}
 }

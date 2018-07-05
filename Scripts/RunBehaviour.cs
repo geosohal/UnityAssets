@@ -106,7 +106,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     private float nextRotTime;
     private GameObject actorGo;
     private Dictionary<string, ItemBehaviour> actorTable;
-    private Dictionary<string, BotBehaviour> botTable;
+    public Dictionary<string, BotBehaviour> botTable;
     private float lastTime;
     
     // speed boost related members
@@ -152,6 +152,8 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     public float moveForce;
 
     public bool isBuildMode;
+    public List<Asteroid> asteroids;
+
     public Game Game
     {
         get { return this.game; }
@@ -207,6 +209,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         audioSource = GetComponent<AudioSource>();
         isFirstUpdate = true;
         isBuildMode = false;
+        asteroids = new List<Asteroid>();
     }
 
     public void Start()
@@ -692,7 +695,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     }
 
 
-
+   // List<BotBehaviour> bots;
 
     public void OnItemRemoved(Item item)
     {

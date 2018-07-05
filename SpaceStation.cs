@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using Forge3D;
 
 public enum BuildingType
 {
@@ -193,6 +194,7 @@ public class SpaceStation : MonoBehaviour {
     private TurretSlot activatedSlot;
     private List<TurretSlot> turretSlots;
     private List<Turret> turrets;
+    public int gold;    // need to move this to warehouse
 
     public SpaceStation()
     {
@@ -222,6 +224,7 @@ public class SpaceStation : MonoBehaviour {
         turretSlots = new List<TurretSlot>();
         activatedSlot = null;
         turrets = new List<Turret>();
+        gold = 0;
     }
 
     public void InitializeButtons()
@@ -251,7 +254,7 @@ public class SpaceStation : MonoBehaviour {
 
     public void OnTurretButton()
     {
-        newTurret = (GameObject)Instantiate(Resources.Load("Turret Repeater"));
+        newTurret = (GameObject)Instantiate(Resources.Load("Turret Laser"));
         ((Renderer)newTurret.GetComponentInChildren<Renderer>()).material.shader = Shader.Find("FORGE3D/Additive");
     }
     public void CreateFirstHub(Vector3 pos)
@@ -638,6 +641,9 @@ public class SpaceStation : MonoBehaviour {
         {
             activatedSlot.isOccupied = true;
             turretSlots.Remove(activatedSlot);
+            F3DPlayerTurretController turrController = newTurret.GetComponent<F3DPlayerTurretController>();
+            turrController.StopFire();
+            turrController.owner = this;
             Turret turret = new Turret(activatedSlot, newTurret);
             ((Renderer)newTurret.GetComponentInChildren<Renderer>()).material.shader = Shader.Find("Standard");
             turrets.Add(turret);

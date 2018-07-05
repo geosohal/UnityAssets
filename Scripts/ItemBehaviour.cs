@@ -95,6 +95,8 @@ public class ItemBehaviour : MonoBehaviour
     public GameObject saberObject;
     public bool isBuildMode;
 
+    public int totalGold;
+
     public void Destroy()
     {
         Destroy(this); // childs and components get destroyed, too
@@ -103,6 +105,7 @@ public class ItemBehaviour : MonoBehaviour
 
     public void Initialize(Game mmoGame, Item actorItem, string name, Radar worldRadar)
     {
+        totalGold = 0;
         isBuildMode = false;
         isSuperFast = false;
         this.item = actorItem;
@@ -153,6 +156,12 @@ public class ItemBehaviour : MonoBehaviour
         wireBall.enabled = !wireBall.enabled;
         isSuperFast = !isSuperFast;
         Debug.Log("ball toggled to " + wireBall.enabled.ToString());
+    }
+
+    public void AddGold(int amount)
+    {
+        totalGold += amount;
+        // todoj send resource add message to server
     }
 
     public void ApplyGridForce(float force, float radius)

@@ -7,12 +7,14 @@ public class Asteroid : MonoBehaviour
 
 	public float health = 30f;
 
-	private float currHealth;
+	public float currHealth;
+    RunBehaviour rb;
 	
 	// Use this for initialization
 	void Start ()
 	{
 		currHealth = health;
+        rb = GameObject.FindGameObjectWithTag("GameController").GetComponent<RunBehaviour>();
 	}
 	
 	// Update is called once per frame
@@ -32,10 +34,10 @@ public class Asteroid : MonoBehaviour
 	private void Die()
 	{
 		// instantiate energy object
-		GameObject hydroObj = (GameObject)Instantiate(Resources.Load("Hydrogen"));
+		GameObject hydroObj = (GameObject)Instantiate(Resources.Load("GoldDrop"));
 		hydroObj.transform.position = transform.position;
-		hydroObj.GetComponent<FreeHydrogen>().quantity = (uint) (health / 3);
-		
+        //hydroObj.GetComponent<FreeHydrogen>().quantity = (uint) (health / 3);
+        rb.asteroids.Remove(this);
 		
 		// remove asteroid object
 		Destroy(this.gameObject);

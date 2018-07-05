@@ -295,14 +295,14 @@ public class StationNode : MonoBehaviour {
         newBridge.mesh.transform.position = bridgePos;
         if (dir == Direction.North || dir == Direction.South)
         {
-            slot1.pos = bridgePos - new Vector3(0,-12,(GetBridgeLenByType(connectedNodeType) / 2f - 12f));
-            slot2.pos = bridgePos + new Vector3(0, 12, (GetBridgeLenByType(connectedNodeType) / 2f - 12f));
+            slot1.pos = bridgePos - new Vector3(0,-12,(GetBridgeLenByType(connectedNodeType) / 2f - 18f));
+            slot2.pos = bridgePos + new Vector3(0, 12, (GetBridgeLenByType(connectedNodeType) / 2f - 18f));
             newBridge.mesh.transform.rotation = Quaternion.Euler(180, 90, 90);
         }
         else
         {
-            slot1.pos = bridgePos - new Vector3((GetBridgeLenByType(connectedNodeType) / 2f - 12f), -12,0);
-            slot2.pos = bridgePos + new Vector3((GetBridgeLenByType(connectedNodeType) / 2f - 12f), 12,0);
+            slot1.pos = bridgePos - new Vector3((GetBridgeLenByType(connectedNodeType) / 2f - 18f), -12,0);
+            slot2.pos = bridgePos + new Vector3((GetBridgeLenByType(connectedNodeType) / 2f - 18f), 12,0);
             newBridge.mesh.transform.rotation = Quaternion.Euler(180, 0, 90);
         }
         slot1.associatedBridge = newBridge;

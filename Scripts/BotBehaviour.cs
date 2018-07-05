@@ -77,6 +77,15 @@ public class BotBehaviour : MonoBehaviour {
 			healthBar.UpdateBar(currHealth, maxHealth);
 		FlySparks();
 	}
+
+    //can be destroyed client side by turret
+    public void CheckIfAlive()
+    {
+        if (currHealth <= 0)
+        {
+
+        }
+    }
 	
 	private void FlySparks()
 	{

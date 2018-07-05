@@ -24,6 +24,7 @@ GameObject:
   - component: {fileID: 58070724193732106}
   - component: {fileID: 50375885584171574}
   - component: {fileID: 114027870067114616}
+  - component: {fileID: 114047804733810764}
   m_Layer: 0
   m_Name: Ateroid_Grey2
   m_TagString: Asteroid
@@ -57,6 +58,7 @@ MeshRenderer:
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
+  m_RenderingLayerMask: 4294967295
   m_Materials:
   - {fileID: 2100000, guid: eaf032c49f41b5747958740daf887ddd, type: 2}
   m_StaticBatchInfo:
@@ -131,4 +133,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 78c9b552c81e84b91b2f369a334c0466, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  health: 32
+--- !u!114 &114047804733810764
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1954882543167026}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2673b21be80bafd41b7a0a5914ad717d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  health: 30
