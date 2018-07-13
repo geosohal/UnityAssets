@@ -31,7 +31,7 @@ public class Asteroid : MonoBehaviour
 		currHealth -= amount;
 	}
 
-	private void Die()
+	public void Die()
 	{
 		// instantiate energy object
 		GameObject hydroObj = (GameObject)Instantiate(Resources.Load("GoldDrop"));

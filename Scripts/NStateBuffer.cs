@@ -69,6 +69,7 @@ public class NStateBuffer
                 Debug.Log("pcount 2");
             // get the interval of the time between two buffer recordings to use as an estimate of all intervals
             float lastTime = posBuffer[currBufferIndex].totalMs;
+            Vector3 lastPos = posBuffer[currBufferIndex].pos;
             int indexOfTimeBeforeLast = currBufferIndex == 0 ? bufferSize - 1 : currBufferIndex - 1;
             double bufferIntervalEstimate = Math.Abs( lastTime - posBuffer[indexOfTimeBeforeLast].totalMs);
             float timeDiff = lastTime - totalms;
@@ -96,6 +97,8 @@ public class NStateBuffer
                                           (posBuffer[ansIndexRight].totalMs - posBuffer[ansIndexLeft].totalMs));
                     //return posBuffer[ansIndexRight].pos * tlerp + posBuffer[ansIndexLeft].pos * (1 - tlerp);
                     return Vector3.Lerp(posBuffer[ansIndexLeft].pos, posBuffer[ansIndexRight].pos, tlerp);
+                  //  Vector3 target = Vector3.Lerp(posBuffer[ansIndexLeft].pos, posBuffer[ansIndexRight].pos, tlerp);
+                   // return Vector3.Lerp(lastPos, target, (float)Math.Exp((float)timeDiff * .05f));
                 }
                 else
                 {

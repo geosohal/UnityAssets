@@ -26,6 +26,8 @@ namespace Forge3D
         //       F3DFXController gfxController;
         public Transform loopToDespawn;
 
+        public bool isForPlayerShip = false;
+
         private void Start()
         {
             rb = GameObject.FindGameObjectWithTag("GameController").GetComponent<RunBehaviour>();
@@ -34,10 +36,12 @@ namespace Forge3D
         }
         void Update()
         {
+            
             float elapsedSec = Time.time - lastTime;
             lastTime = Time.time;
             secondsSinceLastScan += elapsedSec;
-
+            if (isForPlayerShip)
+                return;
             if (targettedAst != null)
                 turret.SetNewTarget(targettedAst.transform.position);
 
@@ -81,8 +85,8 @@ namespace Forge3D
 
 
 
-            //    CheckForTurn();
-            //     CheckForFire();
+              //  CheckForTurn();
+               //  CheckForFire();
         }
 
         // called when targettedAst is null (there is no current target)
@@ -133,14 +137,18 @@ namespace Forge3D
             Debug.Log("stop Fire");
             fxController.Stop();
 
-                //GetComponentInChildren<F3DDespawn>();
-                F3DDespawn[] despawnables = GetComponentsInChildren<F3DDespawn>();
-                foreach (F3DDespawn dsp in despawnables)
-                {
-                    dsp.Despawn();
-                }
-                if (loopToDespawn != null)
-                    ((F3DDespawn)loopToDespawn.GetComponent<F3DDespawn>()).Despawn();
+            //GetComponentInChildren<F3DDespawn>();
+            F3DDespawn[] despawnables;
+            if (isForPlayerShip)
+                despawnables = transform.parent.gameObject.GetComponentsInChildren<F3DDespawn>();
+            else
+                despawnables = GetComponentsInChildren<F3DDespawn>();
+            foreach (F3DDespawn dsp in despawnables)
+            {
+                dsp.Despawn();
+            }
+            if (loopToDespawn != null)
+                ((F3DDespawn)loopToDespawn.GetComponent<F3DDespawn>()).Despawn();
 
           //  F3DPoolManager.Pools["GeneratedPool"].Despawn(fxController.)
             isFiring = false;
@@ -148,7 +156,7 @@ namespace Forge3D
            // turret.StopAnimation();
         }
 
-        void StartFire()
+        public void StartFire()
         {
             Debug.Log("Start Fire");
             isFiring = true;

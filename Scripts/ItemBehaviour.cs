@@ -13,6 +13,7 @@ using Photon.MmoDemo.Common;
 using UnityEngine;
 //using UnityEngine.Assertions.Must;
 using UnityEngine.UI;
+using Forge3D;
 //using UnityEngine.XR.WSA.Sharing;
 //using Object = UnityEngine.Object;
 
@@ -96,6 +97,8 @@ public class ItemBehaviour : MonoBehaviour
     public bool isBuildMode;
 
     public int totalGold;
+    public F3DPlayerTurretController laserbeam;
+    public F3DFXController beamController;
 
     public void Destroy()
     {
@@ -144,6 +147,10 @@ public class ItemBehaviour : MonoBehaviour
         }
 
         prevMouse = Input.mousePosition;
+        laserbeam = GetComponentInChildren<F3DPlayerTurretController>();
+        beamController = GetComponentInChildren<F3DFXController>();
+        if (beamController != null)
+            beamController.TurretSocket[0] = this.transform;
     }
 
     public void ToggleWireBallMode(bool val)
@@ -166,6 +173,7 @@ public class ItemBehaviour : MonoBehaviour
 
     public void ApplyGridForce(float force, float radius)
     {
+        //Mathf.exi n
         if (vectorGrid != null)
         {
             Color alphayellow = Color.yellow;
@@ -506,10 +514,11 @@ public class ItemBehaviour : MonoBehaviour
         }
     }
 
+    float amountTillLock = 6f;
     private bool? IsDeltaAnglePositive(float currAngle, float targetAngle)
     {
         float difference = currAngle - targetAngle;
-        if (Math.Abs(difference) < 3 || currAngle+360 - targetAngle < 3 || targetAngle+360 - currAngle < 3)
+        if (Math.Abs(difference) < amountTillLock || currAngle+360 - targetAngle < amountTillLock || targetAngle+360 - currAngle < amountTillLock)
             return null;
         
         if (Math.Abs(difference) < 180)
@@ -602,8 +611,17 @@ public class ItemBehaviour : MonoBehaviour
     {
         if (laserTimeLeft > 0)
         {
-            laserObject.transform.rotation = Quaternion.LookRotation(fwdByMouse, Vector3.up);
-            laserObject.transform.position = this.transform.position + fwdByMouse*16f ;
+
+            if (beamController != null)
+            {
+                beamController.TurretSocket[0].transform.position = transform.position;
+                beamController.TurretSocket[0].transform.rotation = Quaternion.LookRotation(fwdByMouse, Vector3.up);
+            }
+            else
+            {
+                laserObject.transform.rotation = Quaternion.LookRotation(fwdByMouse, Vector3.up);
+                laserObject.transform.position = this.transform.position + fwdByMouse * 16f;
+            }
         }
     }
     

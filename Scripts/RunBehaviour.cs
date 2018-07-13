@@ -19,6 +19,7 @@ using System.Linq;
 using sysr = System.Random;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Forge3D;
 //using NUnit.Framework.Constraints;
 using UnityEngine.Experimental.Rendering;
 using Debug = UnityEngine.Debug;
@@ -55,6 +56,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     public GameObject HpBox;
     public GameObject MotherMobPrefab;
     public GameObject BallModeStartEffect;
+    public GameObject PlasmaImpact;
     public SimpleHealthBar mpBar;
 
     public List<Tuple<GameObject,float>> Expirableffects;
@@ -96,6 +98,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     public AudioClip thrustSound;
     public AudioClip shipHitSound;
     public AudioClip shipHitSoundM;
+    public AudioClip plasmaGunSound;
     
     private float lastKeyPress;
     private Vector? lastMovePosition;
@@ -154,6 +157,8 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     public bool isBuildMode;
     public List<Asteroid> asteroids;
 
+    private List<Bullet> bullets;
+
     public Game Game
     {
         get { return this.game; }
@@ -210,6 +215,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         isFirstUpdate = true;
         isBuildMode = false;
         asteroids = new List<Asteroid>();
+        bullets = new List<Bullet>();
     }
 
     public void Start()
@@ -390,6 +396,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
                     // laser just turned off so turn off its graphics for the players ship
                     if (ib.laserTimeLeft <= 0)
                     {
+                        ib.laserbeam.StopFire();
                         ib.item.IsLaserFiring = false;
                         if (controlsType == ControlsType.WasdFirst)
                             ib.laserObject.GetComponent<MeshRenderer>().enabled = false;
@@ -540,16 +547,30 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         }
     }
 
+    // attach item associated with appropriate Bullet object
     private void CreateBullet(Item bulletItem)
     {
-        //Operations.SpawnItem(Game, Game.Avatar.Id + "_blt_" + RandomString(5), ItemType.Bullet, new Vector(pos.x, pos.y, pos.z), new Vector(velX,0,velZ), null, true );
-        GameObject newbullet = Instantiate(BulletPrefab, new Vector3(bulletItem.Position.X, 0, bulletItem.Position.Y)* WorldToUnityFactor, 
-            Quaternion.LookRotation( new Vector3(bulletItem.Rotation.X, 0, bulletItem.Rotation.Y)) );
-        Debug.Log("brot:" + bulletItem.Rotation.ToString());
+        for (int i = bullets.Count - 1; i >= 0; i--)
+        {
+            if (bullets[i].Item == null)
+            {
+                bullets[i].Item = bulletItem;
+                return;
+            }
+        }
+    }
+
+    private void CreateBullet(Vector3 pos, Vector2 rot)
+    {
+        GameObject newbullet = Instantiate(BulletPrefab, pos,
+            Quaternion.LookRotation(new Vector3(rot.x, 0, rot.y)));
         Bullet bull = newbullet.GetComponent<Bullet>();
         if (bull == null)
             bull = newbullet.AddComponent(typeof(Bullet)) as Bullet;
-        bull.Initialize(bulletItem);
+        bull.Initialize(clientsPlayer.beamController);
+        newbullet.GetComponent<Rigidbody>().velocity = new Vector3(rot.x, 0, rot.y) +
+            new Vector3(avatarVelocity.x,0,avatarVelocity.y);
+        bullets.Add(bull);
     }
 
     private void CreateActor(Item actorItem)
@@ -701,10 +722,20 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     {
         string objName;
         if (item.Type == ItemType.Bullet)
+        {
             objName = item.Id;
+            foreach (Bullet b in bullets)
+            {
+                if (b.Item.Id == item.Id)
+                {
+                    bullets.Remove(b);
+                    break;
+                }
+            }
+        }
         else if (item.Type == ItemType.Bomb)
         {
-            
+
             objName = item.Id;
             GameObject bomb = GameObject.Find(objName);
             bomb.GetComponent<BombBehavior>().Explode();
@@ -718,7 +749,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         }
         else if (item.Type == ItemType.Bot)
         {
-            
+
             objName = this.ItemObjectName(item);
             Debug.Log("removing bot" + objName + " aka" + item.Id);
             if (botTable.ContainsKey(item.Id))
@@ -730,7 +761,7 @@ public class RunBehaviour : MonoBehaviour, IGameListener
                 //botTable[item.Id].DeathAnimation(Expirableffects);
             }
         }
-        else 
+        else
             objName = this.ItemObjectName(item);
         GameObject obj = GameObject.Find(objName);
         // if this doesnt work for bullet destroy remove the "item_" appendage
@@ -1178,12 +1209,13 @@ public class RunBehaviour : MonoBehaviour, IGameListener
     public void OnLaserFired(ItemBehaviour ib)
     {
         Debug.Log("Laser Fired operation received for " + ib.item.Id);
-        audioSource.PlayOneShot(longLaserSound, 1f);
+      //  audioSource.PlayOneShot(longLaserSound, 1f);
         if (ib != null)
         {
             ib.laserTimeLeft = ib.mlaserTimeLeft;
             Debug.Log("lasr adv");
             ib.laserObject.GetComponent<MeshRenderer>().enabled = true;
+            ib.laserbeam.StartFire();
 //            MeshRenderer[] mrs = ib.GetComponentsInChildren<MeshRenderer>();
 //            foreach (MeshRenderer mr in mrs)
 //            {
@@ -1195,6 +1227,12 @@ public class RunBehaviour : MonoBehaviour, IGameListener
 //                }
 //            }
         }
+    }
+
+    public void PlasmaImpactEffect(Vector3 pos)
+    {
+     //   GameObject explosion = Instant
+        Expirableffects.Add(new Tuple<GameObject, float>(PlasmaImpact, 1.5f));
     }
 
     public void OnSaberFired(ItemBehaviour ib)
@@ -1326,6 +1364,15 @@ public class RunBehaviour : MonoBehaviour, IGameListener
         currMP -= bulletCost;
         Operations.FireBullet(Game,new Vector(pos.x, pos.z)/ WorldToUnityFactor, 
             new Vector(fwX, fwZ), avatarVelocity.x, avatarVelocity.y, true);
+        CreateBullet(pos, new Vector2(fwX, fwZ));
+
+        GameObject flash = (GameObject)Instantiate(Resources.Load("plasma_gun_muzzle_flash"));
+        flash.transform.position = clientsPlayer.transform.position;
+        flash.transform.position = flash.transform.position + new Vector3(0, .2f, 0);
+        flash.transform.rotation = clientsPlayer.transform.rotation;
+        Expirableffects.Add(new Tuple<GameObject, float>(flash, .14f));
+        audioSource.PlayOneShot(plasmaGunSound, .3f);
+
     }
     
     #endregion

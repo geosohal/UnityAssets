@@ -45,15 +45,17 @@ public class BombBehavior : MonoBehaviour
 	public void Explode()
 	{
 		GetComponent<MeshRenderer>().enabled = false;
-		foreach (ParticleSystem particleSystem in particlePrefabs)
+        RunBehaviour rb = (RunBehaviour)GameObject.FindWithTag("GameController").GetComponent<RunBehaviour>();
+        foreach (ParticleSystem particleSystem in particlePrefabs)
 		{
 			particleSystem.Play();
+            rb.Expirableffects.Add(new Tuple<GameObject,float>(particleSystem.gameObject,1f));
 		}
+        
 
-		float distToClientPlayer2 = (this.transform.position -
-		                             ((RunBehaviour) GameObject.FindWithTag("GameController").GetComponent<RunBehaviour>())
-		                             .clientsPlayer.transform
-		                             .position).sqrMagnitude;
+        float distToClientPlayer2 = (this.transform.position -
+		                             rb.clientsPlayer.transform.position).sqrMagnitude;
+
 
 		float volume = Mathf.Lerp(1, 0, distToClientPlayer2 / 10000f);
 		
@@ -102,8 +104,11 @@ public class BombBehavior : MonoBehaviour
 			float elapsedSec = Time.time - lastTime;
 			timeTillDestroy -= elapsedSec;
 
-			if (timeTillDestroy < 0)
-				Destroy(this);
+            if (timeTillDestroy < 0)
+            {
+                Destroy(this.gameObject);
+                return;
+            }
 
 		}
 		lastTime = Time.time;
